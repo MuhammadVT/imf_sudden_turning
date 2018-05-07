@@ -12,7 +12,7 @@ import pdb
 
 class latc_lonc_to_db(object):
 
-    def __init__(self, rad, stm, etm, coords="geo", ftype="fitacf",
+    def __init__(self, rad, stm, etm, ftype="fitacf",
 		 dbdir="../data/sqlite3/", db_name=None):
 
         """ calculates the center points of range-beam cells of a given radar
@@ -26,9 +26,6 @@ class latc_lonc_to_db(object):
             The start time. 
         etm : datetime.datetime
             The end time. 
-        coords : str
-            Coordinate system
-	    NOTE: so far it should only be set to "geo"
         ftype : str
             SuperDARN file type 
 
@@ -39,7 +36,6 @@ class latc_lonc_to_db(object):
                        "hok":40, "hkw":41, "tig":14, "unw":18, "bpk":24 }
         self.rad = rad
         self.rad_id = rad_id_dict[rad]
-        self.coords = coords
         self.stm = stm
         self.etm = etm
         self.ftype = ftype
@@ -152,8 +148,7 @@ class latc_lonc_to_db(object):
 		    latc_all, lonc_all = calc_latc_lonc(self.sites[ii],
 							bmnum, frang, rsep, 
 							altitude=300., elevation=None,
-							coord_alt=0.,
-							coords="geo", date_time=None)
+							date_time=None)
                         
 		    vel = json.loads(vel)
 		    slist = json.loads(slist)
@@ -197,7 +192,7 @@ class latc_lonc_to_db(object):
         return
 
 def calc_latc_lonc(site, bmnum, frang, rsep, altitude=300.,
-                   elevation=None, coord_alt=0., coords="geo",
+                   elevation=None,
                    date_time=None):
 
     """ calculates center lat and lon of all the range-gates of a given bmnum
@@ -215,17 +210,9 @@ def calc_latc_lonc(site, bmnum, frang, rsep, altitude=300.,
         Default to 300. [km]
     elevation : float
         Defalut to None, in which case it will be estimated by the algorithm.
-    coord_alt : float 
-        like altitude, but only used for conversion from geographic to
-        other coordinate systems.
-        Default: 0, but set it to an appropriate float number for coord conversion
-        at certain altitude. 
-	NOTE: NOT APPLICABLE IF COORDS == "geo"
     date_time : datetime.datetime
         the datetime for which the FOV is desired. Required for mag and mlt,
         and possibly others in the future. Default: None
-    coords : str
-        Coordinate system, should be set to "geo"
 
     Returns
     -------
@@ -261,7 +248,6 @@ def calc_latc_lonc(site, bmnum, frang, rsep, altitude=300.,
     for ig in gates:
         talt = altitude
         telv = elevation
-        t_c_alt = coord_alt
 
         # calculate projections
         latc, lonc = calcFieldPnt(siteLat, siteLon, siteAlt * 1e-3,
@@ -269,10 +255,6 @@ def calc_latc_lonc(site, bmnum, frang, rsep, altitude=300.,
                                   srang_center[ig], elevation=telv,
                                   altitude=talt, model="IS",
                                   fov_dir="front")
-#        if(coords != 'geo'):
-#            lonc, latc = coord_conv(lonc, latc, "geo", coords,
-#                                    altitude=t_c_alt,
-#                                    date_time=date_time)
 
         # Save into output arrays
         lat_center[ig] = latc
@@ -291,7 +273,7 @@ def worker(rad, stm, etm, ftype="fitacf",
     t1 = dt.datetime.now()
     print("creating an latc_lonc_to_db object for " + \
           rad + " for period between " + str(stm) + " and " + str(etm))
-    obj = latc_lonc_to_db(rad, stm, etm, coords="geo", ftype=ftype,
+    obj = latc_lonc_to_db(rad, stm, etm, ftype=ftype,
 			  dbdir=dbdir, db_name=db_name)
 
     # calculate geolatc and geolonc and write them into a db
