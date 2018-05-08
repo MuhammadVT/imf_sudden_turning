@@ -50,8 +50,8 @@ class grids(object):
         
         # azimuthal bins and their centers
         # Note: zero azm indicate the direction towards the mag north
-        self.azm_bins = [x for x in range(0, 370, 10)]
-        self.center_azms = [x for x in range(5, 365, 10)]
+        self.azm_bins = [x for x in range(0, 362, 2)]
+        self.center_azms = [x for x in range(1, 361, 2)]
 
         return
 
@@ -97,7 +97,7 @@ def bin_to_grid(rad, stm=None, etm=None, ftype="fitacf",
 		coords = "mlt", hemi="north",
                 dbdir="../data/sqlite3/", db_name=None):
 
-    """ bins the data into mlat-mlt.
+    """ bins the data into mlat-mlt-azm.
 
     Parameters
     ----------
@@ -121,6 +121,11 @@ def bin_to_grid(rad, stm=None, etm=None, ftype="fitacf",
     db_name : str, default to None
         Name of the sqlite db to which gridded los will be written
     
+    Note
+    ----
+        0 xxx_gazmc directs towards magnetic (or geo) north. 180 gazmc directs towards south.
+        gazmc (gridded azimuthal center) spans from 1 - 359 degrees.
+
     """
 
     import numpy as np
@@ -151,11 +156,11 @@ def bin_to_grid(rad, stm=None, etm=None, ftype="fitacf",
     if coords == "mlt":
         col_glatc = "mag_glatc"   # glatc -> gridded latitude center
         col_gltc = "mag_gltc"     # mlt hour in degrees
-        #col_gazmc = "mag_gazmc"   # gazmc -> gridded azimuthal center
+        col_gazmc = "mag_gazmc"   # gazmc -> gridded azimuthal center
     if coords == "geo":
         col_glatc = "geo_glatc"
         col_gltc = "geo_gltc"    # local time in degrees
-        #col_gazmc = "geo_gazmc"
+        col_gazmc = "geo_gazmc"
     try:
         command = "ALTER TABLE {tb} ADD COLUMN {glatc} TEXT"
         command = command.format(tb=table_name, glatc=col_glatc) 
@@ -170,34 +175,34 @@ def bin_to_grid(rad, stm=None, etm=None, ftype="fitacf",
     except:
         # pass if the column gltc exists
         pass
-#    try:
-#        command = "ALTER TABLE {tb} ADD COLUMN {gazmc} TEXT"
-#        command = command.format(tb=table_name, gazmc=col_gazmc) 
-#        cur.execute(command)
-#    except:
-#        # pass if the column gazmc exists
-#        pass
+    try:
+        command = "ALTER TABLE {tb} ADD COLUMN {gazmc} TEXT"
+        command = command.format(tb=table_name, gazmc=col_gazmc) 
+        cur.execute(command)
+    except:
+        # pass if the column gazmc exists
+        pass
 
     # do the convertion to all the data in db if stm and etm are all None
     if coords == "mlt":
 	col_latc = "mag_latc"
 	col_ltc = "mag_ltc"
-	#col_azmc = "mag_azmc"
+	col_azmc = "mag_azmc"
     if coords == "geo":
 	col_latc = "geo_latc"
 	col_ltc = "geo_ltc"
-	#col_azmc = "geo_azmc"
+	col_azmc = "geo_azmc"
 
     if (stm is not None) and (etm is not None):
-        command = "SELECT {latc}, {lonc}, datetime FROM {tb} " +\
+        command = "SELECT {latc}, {lonc}, {azm}, datetime FROM {tb} " +\
                   "WHERE datetime BETWEEN '{sdtm}' AND '{edtm}' ORDER BY datetime ASC"
         command = command.format(tb=table_name, sdtm=stm, edtm=etm,
-                                 latc=col_latc, lonc=col_ltc)
+                                 latc=col_latc, lonc=col_ltc, azm=col_azmc)
 
     # do the convertion to the data between stm and etm if any of them is None
     else:
-        command = "SELECT {latc}, {lonc}, datetime FROM {tb} ORDER BY datetime ASC".\
-		  format(tb=table_name, latc=col_latc, lonc=col_ltc)
+        command = "SELECT {latc}, {lonc}, {azm}, datetime FROM {tb} ORDER BY datetime ASC".\
+		  format(tb=table_name, latc=col_latc, lonc=col_ltc, azm=col_azmc)
     try:
         cur.execute(command)
     except Exception, e:
@@ -207,11 +212,12 @@ def bin_to_grid(rad, stm=None, etm=None, ftype="fitacf",
     # do the conversion row by row
     if rows != []:
         for row in rows:
-            latc, lonc, date_time= row
+            latc, lonc, azm, date_time= row
             if latc:
                 # Load json string
                 latc = json.loads(latc)
                 lonc = json.loads(lonc)
+                azm = json.loads(azm)
 
                 # grid the data
                 # grid latc
@@ -234,30 +240,31 @@ def bin_to_grid(rad, stm=None, etm=None, ftype="fitacf",
                     except IndexError:
                         glonc.append(np.nan)
 
-#                # grid azm
-#                indx_azmc = np.digitize(azm, grds.azm_bins)
-#                indx_azmc = [x-1 for x in indx_azmc]
-#                #gazmc = [grds.center_azms[x] for x in indx_azmc]
-#
-#                # NOTE: the following way of using return_nan_if_IndexError
-#                # avoids nan in azm
-#                gazmc = [return_nan_if_IndexError(grds.center_azms,x) for x in indx_azmc]
+                # grid azm
+                indx_azmc = np.digitize(azm, grds.azm_bins)
+                indx_azmc = [x-1 for x in indx_azmc]
+                #gazmc = [grds.center_azms[x] for x in indx_azmc]
+
+                # NOTE: the following way of using return_nan_if_IndexError
+                # avoids nan in azm
+                gazmc = [return_nan_if_IndexError(grds.center_azms,x) for x in indx_azmc]
 
                 # convert to str
                 glatc = json.dumps(glatc)
                 glonc = json.dumps(glonc)
+                gazmc = json.dumps(gazmc)
 
                 # update the table
 		if coords == "mlt":
 		    command = "UPDATE {tb} SET mag_glatc='{glatc}', " +\
-			      "mag_gltc='{glonc}' " +\
+			      "mag_gltc='{glonc}', mag_gazmc='{gazmc}' " +\
 			      "WHERE datetime = '{dtm}'"
 		if coords == "geo":
 		    command = "UPDATE {tb} SET geo_glatc='{glatc}', " +\
-			      "geo_gltc='{glonc}' " +\
+			      "geo_gltc='{glonc}', geo_gazmc='{gazmc}' " +\
 			      "WHERE datetime = '{dtm}'"
 		command = command.format(tb=table_name, glatc=glatc,
-                                         glonc=glonc, dtm=date_time)
+                                         glonc=glonc, gazmc=gazmc, dtm=date_time)
 
 		# update
                 try:
