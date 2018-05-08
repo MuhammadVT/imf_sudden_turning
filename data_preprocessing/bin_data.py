@@ -1,0 +1,365 @@
+import pdb
+class grids(object):
+
+    def __init__(self, lat_min=30, lat_max=90, dlat=1, hemi="north", 
+                 half_dlat_offset=False):
+        """ This class is used to create mlat-mlt-mag_azm
+        (or geolat-lt-geo_azm) bins on a map.
+
+        Parameters
+        ----------
+        lat_min : int or float 
+            The minimum latitude where gridding stops.
+        lat_max : int or float 
+            The maximum latitude where gridding stops.
+        dlat : int or float 
+            Width of each grid-cell
+        hemi : str
+            Hemisphere. e.g., "north", "south"
+            NOTE: hemi not have been implemented yet.
+        half_dlat_offset : bool, default to False
+            Note: half_dlat_offset=False implements NINT[360 sin(theta)] 
+                  (determines longitudinal width) at theta = 89, 88, ... colatitude.
+                  half_dlat_offset=True implements NINT[360 sin(theta)]
+                  (determines longitudinal width) at theta = 89.5, 88.5, ... colatitude.
+
+        Returns
+        -------
+        Nothing
+
+        """
+
+        import numpy as np
+
+        self.lat_min = lat_min
+        self.lat_max = lat_max
+        self.dlat = dlat
+        self.hemi = hemi
+        self.half_dlat_offset = half_dlat_offset
+        self.center_lats = [x + 0.5*dlat for x in np.arange(lat_min, lat_max, dlat)] 
+        if half_dlat_offset:
+            self.nlons = [round(360. * np.sin(np.deg2rad(90.-lat))) for lat in self.center_lats]
+        else:
+            # In this case, grid-cells next to the polar point share the same point, the polar point.
+            self.nlons = [round(360. * np.sin(np.deg2rad(90.-(lat-0.5*dlat)))) for lat in self.center_lats]
+        self.dlons = [360./nn for nn in self.nlons]
+
+        # lat and lon bins (the edges of each grid-cell)
+        self.lat_bins = [x for x in np.arange(lat_min,lat_max+dlat,dlat)] 
+        self.lon_bins, self.center_lons = self._create_lonbins()
+        
+        # azimuthal bins and their centers
+        # Note: zero azm indicate the direction towards the mag north
+        self.azm_bins = [x for x in range(0, 370, 10)]
+        self.center_azms = [x for x in range(5, 365, 10)]
+
+        return
+
+    def _create_lonbins(self):
+        """ creates longitudinal bins """
+
+        import numpy as np
+
+        lon_bins = []
+        center_lons = []      # a list of lists of lons. Each list is associated with a center_lat
+        for i in range(len(self.center_lats)):
+            lon_tmp = [ round(item*self.dlons[i],2) for item in np.arange(0.5, self.nlons[i]+0.5) ]
+            center_lons.append(lon_tmp)
+            lon_tmp = [ item*self.dlons[i] for item in np.arange(self.nlons[i]) ]
+            lon_tmp.append(360.) 
+            lon_bins.append(lon_tmp)
+
+        return lon_bins, center_lons 
+        
+
+def return_nan_if_IndexError(data, index):
+    """ returns np.nan if index is out of range of data,
+    else returns data[index].
+
+    Parameters
+    ----------
+    data : list or np.array
+    index : int
+
+    Returns
+    data[index] or np.nan
+    
+    """
+    import numpy as np
+    try:
+        out = data[index]
+    except IndexError:
+        out = np.nan
+
+    return out
+
+def bin_to_grid(rad, stm=None, etm=None, ftype="fitacf",
+		coords = "mlt", hemi="north",
+                dbdir="../data/sqlite3/", db_name=None):
+
+    """ bins the data into mlat-mlt.
+
+    Parameters
+    ----------
+    rad : str
+        Three-letter radar code
+    stm : datetime.datetime
+        The start time.
+        Default to None, in which case takes the earliest in db.
+    etm : datetime.datetime
+        The end time.
+        Default to None, in which case takes the latest time in db.
+        NOTE: if stm is None then etm should also be None, and vice versa.
+    ftype : str
+        SuperDARN file type
+    coords : str
+        Coordinates in which the binning process takes place.
+        Default to "mlt. Can be "geo" as well. 
+    hemi : str
+        Hemisphere. e.g., "north", "south"
+        NOTE: hemi not have been implemented yet.
+    db_name : str, default to None
+        Name of the sqlite db to which gridded los will be written
+    
+    """
+
+    import numpy as np
+    import datetime as dt
+    import sys
+    sys.path.append("../")
+    import logging
+    import sqlite3
+    import json
+
+
+    # create grid points
+    if hemi=="north":
+        grds = grids(lat_min=20, lat_max=90, dlat=1, half_dlat_offset=False)
+
+    # make db connection
+    if db_name is None:
+        db_name = "sd_gridded_los_data_" + ftype + ".sqlite"
+    try:
+        conn = sqlite3.connect(dbdir + db_name,
+                               detect_types = sqlite3.PARSE_DECLTYPES)
+        cur = conn.cursor()
+    except Exception, e:
+        logging.error(e, exc_info=True)
+
+    # add new columns
+    table_name = rad
+    if coords == "mlt":
+        col_glatc = "mag_glatc"   # glatc -> gridded latitude center
+        col_gltc = "mag_gltc"     # mlt hour in degrees
+        #col_gazmc = "mag_gazmc"   # gazmc -> gridded azimuthal center
+    if coords == "geo":
+        col_glatc = "geo_glatc"
+        col_gltc = "geo_gltc"    # local time in degrees
+        #col_gazmc = "geo_gazmc"
+    try:
+        command = "ALTER TABLE {tb} ADD COLUMN {glatc} TEXT"
+        command = command.format(tb=table_name, glatc=col_glatc) 
+        cur.execute(command)
+    except:
+        # pass if the column glatc exists
+        pass
+    try:
+        command = "ALTER TABLE {tb} ADD COLUMN {glonc} TEXT"
+        command = command.format(tb=table_name, glonc=col_gltc) 
+        cur.execute(command)
+    except:
+        # pass if the column gltc exists
+        pass
+#    try:
+#        command = "ALTER TABLE {tb} ADD COLUMN {gazmc} TEXT"
+#        command = command.format(tb=table_name, gazmc=col_gazmc) 
+#        cur.execute(command)
+#    except:
+#        # pass if the column gazmc exists
+#        pass
+
+    # do the convertion to all the data in db if stm and etm are all None
+    if coords == "mlt":
+	col_latc = "mag_latc"
+	col_ltc = "mag_ltc"
+	#col_azmc = "mag_azmc"
+    if coords == "geo":
+	col_latc = "geo_latc"
+	col_ltc = "geo_ltc"
+	#col_azmc = "geo_azmc"
+
+    if (stm is not None) and (etm is not None):
+        command = "SELECT {latc}, {lonc}, datetime FROM {tb} " +\
+                  "WHERE datetime BETWEEN '{sdtm}' AND '{edtm}' ORDER BY datetime ASC"
+        command = command.format(tb=table_name, sdtm=stm, edtm=etm,
+                                 latc=col_latc, lonc=col_ltc)
+
+    # do the convertion to the data between stm and etm if any of them is None
+    else:
+        command = "SELECT {latc}, {lonc}, datetime FROM {tb} ORDER BY datetime ASC".\
+		  format(tb=table_name, latc=col_latc, lonc=col_ltc)
+    try:
+        cur.execute(command)
+    except Exception, e:
+        logging.error(e, exc_info=True)
+    rows = cur.fetchall() 
+
+    # do the conversion row by row
+    if rows != []:
+        for row in rows:
+            latc, lonc, date_time= row
+            if latc:
+                # Load json string
+                latc = json.loads(latc)
+                lonc = json.loads(lonc)
+
+                # grid the data
+                # grid latc
+                indx_latc = np.digitize(latc, grds.lat_bins)
+                indx_latc = [x-1 for x in indx_latc]
+                #glatc = [grds.center_lats[x] for x in indx_latc]
+
+                # NOTE: the following way of using return_nan_if_IndexError
+                # avoids nan in latc
+                glatc = [return_nan_if_IndexError(grds.center_lats, x) for x in indx_latc]
+
+                # grid lonc
+                # NOTE: the following way avoids nan in lonc
+                glonc = []
+                for i in range(len(lonc)):
+                    try:
+                        indx_lonc = np.digitize(lonc[i], grds.lon_bins[indx_latc[i]]) 
+                        indx_lonc = indx_lonc - 1
+                        glonc.append(grds.center_lons[indx_latc[i]][indx_lonc])
+                    except IndexError:
+                        glonc.append(np.nan)
+
+#                # grid azm
+#                indx_azmc = np.digitize(azm, grds.azm_bins)
+#                indx_azmc = [x-1 for x in indx_azmc]
+#                #gazmc = [grds.center_azms[x] for x in indx_azmc]
+#
+#                # NOTE: the following way of using return_nan_if_IndexError
+#                # avoids nan in azm
+#                gazmc = [return_nan_if_IndexError(grds.center_azms,x) for x in indx_azmc]
+
+                # convert to str
+                glatc = json.dumps(glatc)
+                glonc = json.dumps(glonc)
+
+                # update the table
+		if coords == "mlt":
+		    command = "UPDATE {tb} SET mag_glatc='{glatc}', " +\
+			      "mag_gltc='{glonc}' " +\
+			      "WHERE datetime = '{dtm}'"
+		if coords == "geo":
+		    command = "UPDATE {tb} SET geo_glatc='{glatc}', " +\
+			      "geo_gltc='{glonc}' " +\
+			      "WHERE datetime = '{dtm}'"
+		command = command.format(tb=table_name, glatc=glatc,
+                                         glonc=glonc, dtm=date_time)
+
+		# update
+                try:
+                    cur.execute(command)
+                except Exception, e:
+                    logging.error(e, exc_info=True)
+
+        # commit the results
+        try:
+            conn.commit()
+        except Exception, e:
+            logging.error(e, exc_info=True)
+
+    # close the db connection
+    conn.close()
+
+    return
+
+def worker(rad, stm=None, etm=None, ftype="fitacf",
+           coords="mlt", hemi="north",
+           dbdir="../data/sqlite3/", db_name=None):
+
+    """ A worker function to be used for parallel computing """
+
+    import datetime as dt
+
+    if db_name is None:
+        db_name = "sd_gridded_los_data_" + ftype + ".sqlite"
+
+    # start running geo_to_mlt
+    t1 = dt.datetime.now()
+    if coords=="geo":
+        print("start binning data in geo coords. for " +\
+              rad + " for period between " + str(stm) + " and " + str(etm))
+    elif coords=="mlt":
+        print("start binnng data in MLAT-MLT coords. for " +\
+              rad + " for period between " + str(stm) + " and " + str(etm))
+    bin_to_grid(rad, stm=stm, etm=etm, ftype=ftype,
+		coords=coords, hemi=hemi,
+                dbdir=dbdir, db_name=db_name)
+    print("Binned values have been written to db for " +\
+           rad + " for period between " + str(stm) + " and " + str(etm))
+
+    t2 = dt.datetime.now()
+    print("Finishing binning data from " + \
+           rad + " for period between " + str(stm) + " and " +\
+           str(etm) + " took " + str((t2-t1).total_seconds() / 60.) + " mins\n")
+
+    return
+
+def main(run_in_parallel=True):
+    """ Call the functions above. Acts as an example code.
+    Multiprocessing has been implemented to do parallel computing.
+    A unit process is for a radar beam (i.e. a db table)"""
+
+    import datetime as dt
+    import multiprocessing as mp
+    import logging
+    
+    # create a log file to which any error occured will be written.
+    logging.basicConfig(filename="./log_files/bin_data.log",
+                        level=logging.INFO)
+    
+    # input parameters
+    stm = None 
+    etm = None 
+    ftype = "fitacf"
+    coords="mlt"         # set this to "geo" if you want to remain in "geo" coords
+    db_name = None       # if set to None default iscat db would be read. 
+    dbdir="../data/sqlite3/"
+    hemi = "north"       # currently only works for "north".
+    
+    # run the code for the following radars in parallel
+    rad_list = ["wal", "bks", "fhe", "fhw", "cve", "cvw", "ade", "adw"] 
+
+    # loop through the dates
+    for rad in rad_list:
+        
+        # store the multiprocess
+        procs = []
+        if run_in_parallel:
+            # cteate a process
+            worker_kwargs = {"stm":stm, "etm":etm, "ftype":ftype,
+                             "coords":coords, "hemi":hemi,
+                             "dbdir":dbdir, "db_name":db_name}
+            p = mp.Process(target=worker, args=(rad),
+                           kwargs=worker_kwargs)
+            procs.append(p)
+            
+            # run the process
+            p.start()
+        else:
+            worker(rad, stm=stm, etm=etm, ftype=ftype,
+                   coords=coords, hemi=hemi,
+                   dbdir=dbdir, db_name=db_name)
+
+        if run_in_parallel:
+            # make sure the processes terminate
+            for p in procs:
+                p.join()
+
+    return
+
+if __name__ == "__main__":
+    main(run_in_parallel=False)
