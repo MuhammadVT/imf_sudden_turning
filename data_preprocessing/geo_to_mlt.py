@@ -65,6 +65,13 @@ def geo_to_mlt(rad, stm=None, etm=None, ftype="fitacf",
 	logging.error(e, exc_info=True)
 
     table_name = rad 
+    # Check whether the table of interest exists
+    command = "SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}'"
+    command = command.format(table_name = table_name)
+    cur.execute(command)
+    if not cur.fetchall():
+	return
+
     # add new columns for geo_ltc (local time in geo) 
     if stay_in_geo:
         try:
@@ -329,11 +336,9 @@ def main(run_in_parallel=True):
     rad_list = ["wal", "bks", "fhe", "fhw", "cve", "cvw", "ade", "adw"]
     
     # loop through the dates
+    # store the multiprocess
+    procs = []
     for rad in rad_list:
-        
-        # store the multiprocess
-        procs = []
-        
         if run_in_parallel:
             # cteate a process
             worker_kwargs = {"stm":stm, "etm":etm, "ftype":ftype,
@@ -351,10 +356,10 @@ def main(run_in_parallel=True):
                    dbdir=dbdir, db_name=db_name,
                    t_c_alt=t_c_alt, stay_in_geo=stay_in_geo)
             
-        if run_in_parallel:
-            # make sure the processes terminate
-            for p in procs:
-                p.join()
+    if run_in_parallel:
+        # make sure the processes terminate
+        for p in procs:
+            p.join()
 
     return
 

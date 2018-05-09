@@ -341,10 +341,10 @@ def main(run_in_parallel=True):
     rad_list = ["wal", "bks", "fhe", "fhw", "cve", "cvw", "ade", "adw"] 
 
     # loop through the dates
+    # store the multiprocess
+    procs = []
     for rad in rad_list:
         
-        # store the multiprocess
-        procs = []
         if run_in_parallel:
             # cteate a process
             worker_kwargs = {"stm":stm, "etm":etm, "ftype":ftype,
@@ -361,10 +361,10 @@ def main(run_in_parallel=True):
                    coords=coords, hemi=hemi,
                    dbdir=dbdir, db_name=db_name)
 
-        if run_in_parallel:
-            # make sure the processes terminate
-            for p in procs:
-                p.join()
+    if run_in_parallel:
+        # make sure the processes terminate
+        for p in procs:
+            p.join()
 
     return
 

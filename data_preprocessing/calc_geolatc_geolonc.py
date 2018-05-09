@@ -16,7 +16,7 @@ class latc_lonc_to_db(object):
 		 dbdir="../data/sqlite3/", db_name=None):
 
         """ calculates the center points of range-beam cells of a given radar
-        in geo coords and add them into a new db.
+        in geo coords and add them into the same db.
 
         Parameters
         ----------
@@ -41,9 +41,18 @@ class latc_lonc_to_db(object):
         self.ftype = ftype
 	self.dbdir = dbdir
         self.db_name = db_name
-        self.table_name = self.rad
         self.conn = self._create_dbconn()
-        self.sites = self._create_site_list()
+
+        # Check whether the table of interest exists
+        command = "SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}'"
+        command = command.format(table_name = self.rad)
+        cur = self.conn.cursor()
+        cur.execute(command)
+        if cur.fetchall():
+            self.table_name = self.rad
+            self.sites = self._create_site_list()
+        else:    
+            self.table_name = None
 
     def _create_dbconn(self):
 
@@ -104,9 +113,13 @@ class latc_lonc_to_db(object):
 
         import logging
 	import json
-        
-        cur = self.conn.cursor()
 
+        if self.table_name is None:
+            # close db connection
+            self.conn.close()
+            return
+
+        cur = self.conn.cursor()
         # add new columns
         try:
             command ="ALTER TABLE {tb} ADD COLUMN geo_latc TEXT".format(tb=self.table_name) 
@@ -139,7 +152,6 @@ class latc_lonc_to_db(object):
             except Exception, e:
                 logging.error(e, exc_info=True)
             rows = cur.fetchall() 
-
             if rows != []:
                 # loop through rows 
                 for row in rows:
@@ -296,9 +308,8 @@ def main(run_in_parallel=True):
     import datetime as dt
     import multiprocessing as mp
     from shutil import copyfile 
-    import sys
-    sys.path.append("../")
     import logging
+    import os
 
     # create a log file to which any error occured will be written.
     logging.basicConfig(filename="./log_files/calc_geolatc_geolonc.log",
@@ -314,22 +325,21 @@ def main(run_in_parallel=True):
     # run the code for the following radars in parallel
     rad_list = ["wal", "bks", "fhe", "fhw", "cve", "cvw", "ade", "adw"]
 
-
     ftype = "fitacf"
-    dbdir="../data/sqlite3/"
-    # Copy db
-    old_dbname = "sd_los_data_" + ftype + ".sqlite"
     db_name = "sd_gridded_los_data_" + ftype + ".sqlite"
-    copyfile(dbdir + old_dbname, dbdir + db_name)
+    dbdir="../data/sqlite3/"
+
+#    # Copy db
+#    old_dbname = "sd_los_data_" + ftype + ".sqlite"
+#    db_name = "sd_gridded_los_data_" + ftype + ".sqlite"
+#    if not os.path.isfile(dbdir + db_name):
+#        copyfile(dbdir + old_dbname, dbdir + db_name)
 
     # loop through the rads
+    # store the multiprocess
+    procs = []
     for rad in rad_list:
-
-        # store the multiprocess
-        procs = []
-
 	if run_in_parallel:
-
 	    # cteate a process
 	    worker_kwargs = {"ftype":ftype, "db_name":db_name, "dbdir":dbdir}
 	    p = mp.Process(target=worker, args=(rad, stm, etm),
@@ -342,10 +352,10 @@ def main(run_in_parallel=True):
 	else:
 	    worker(rad, stm, etm, ftype=ftype, dbdir=dbdir, db_name=db_name)
 
-	if run_in_parallel:
-	    # make sure the processes terminate
-	    for p in procs:
-		p.join()
+    if run_in_parallel:
+        # make sure the processes terminate
+        for p in procs:
+            p.join()
 
     return
 

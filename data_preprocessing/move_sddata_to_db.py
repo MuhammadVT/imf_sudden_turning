@@ -1,5 +1,5 @@
 '''
-Created on Jul. 18, 2017
+Created on May. 6, 2018
 
 Muhamamd
 '''
@@ -74,23 +74,27 @@ class los_data_to_db(object):
 	cur.execute(command)
 
 	# Write the data into table_name in the sqlite db
-
 	data_dict = self.data
-	for i in xrange(len(data_dict['datetime'])):
-	    command = "INSERT OR IGNORE INTO {tb} (vel, slist, gflg, bmnum,"+\
-		      "bmazm, nrang, rsep, frang, stid, datetime) "+\
-	              "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-	    command = command.format(tb=table_name)
-	    cur.execute(command, (json.dumps(data_dict["vel"][i]),
-			json.dumps(data_dict["slist"][i]), json.dumps(data_dict["gflg"][i]),
-			data_dict["bmnum"][i], data_dict["bmazm"][i], data_dict["nrang"][i],
-			data_dict["rsep"][i],data_dict["frang"][i],data_dict["stid"][i],
-			data_dict["datetime"][i]))
+        if data_dict is None:
+            pass
+        else:
+            for i in xrange(len(data_dict['datetime'])):
+                command = "INSERT OR IGNORE INTO {tb} (vel, slist, gflg, bmnum,"+\
+                          "bmazm, nrang, rsep, frang, stid, datetime) "+\
+                          "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+                command = command.format(tb=table_name)
+                cur.execute(command, (json.dumps(data_dict["vel"][i]),
+                            json.dumps(data_dict["slist"][i]), json.dumps(data_dict["gflg"][i]),
+                            data_dict["bmnum"][i], data_dict["bmazm"][i], data_dict["nrang"][i],
+                            data_dict["rsep"][i],data_dict["frang"][i],data_dict["stid"][i],
+                            data_dict["datetime"][i]))
 
-        # commit the change, once at one day of data points
-        conn.commit()
+            # commit the change, once at one day of data points
+            conn.commit()
 
-def worker(dbName, baseLocation, rad, stime, etime, ftype, channel):
+        return
+
+def worker(db_name, dbdir, rad, stime, etime, ftype, channel):
     """ A worker function used for multiprocessing.
     """
 
@@ -98,7 +102,7 @@ def worker(dbName, baseLocation, rad, stime, etime, ftype, channel):
     import datetime as dt
 
     # make a db connection
-    conn = sqlite3.connect(baseLocation + dbName)
+    conn = sqlite3.connect(dbdir + db_name)
 
     # collect the data 
     t1 = dt.datetime.now()
@@ -136,13 +140,13 @@ def main():
 
     ftype = "fitacf"
     #ftype = "fitex"
-    dbName =  "sd_los_data_" + ftype + ".sqlite"
+    db_name =  "sd_gridded_los_data_" + ftype + ".sqlite"
 
     stms = [dt.datetime(2014, 12, 16, 13, 30)]
     etms = [dt.datetime(2014, 12, 16, 13, 40)]
 
     # make a db connection
-    baseLocation = "../../data/sqlite3/"
+    dbdir = "../../data/sqlite3/"
 
     # loop through the datetimes in stms
     for i in range(len(stms)):
@@ -155,11 +159,11 @@ def main():
             channel = channels[j]
             
             # For testing purpose
-            #worker(dbName, baseLocation, rad, stm, etm, ftype, channel)
+            #worker(db_name, dbdir, rad, stm, etm, ftype, channel)
 
             # Creat a processe
             p = mp.Process(target=worker,
-                           args=(dbName, baseLocation, rad, stm, etm,
+                           args=(db_name, dbdir, rad, stm, etm,
                            ftype, channel))
             procs.append(p)
 
