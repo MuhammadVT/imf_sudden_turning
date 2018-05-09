@@ -257,12 +257,42 @@ def median_filter(rads, stms, etms, hemi="north",
 
     return
 
+def create_master_db(ftype = "fitacf", coords="mlt",
+		     filtered_interval=2.,
+		     input_dbname=None, output_dbname=None,
+		     dbdir="../data/sqlite3/",
+		     master_table=True):
 
+    from build_master_db import build_master_table 
+
+    if input_dbname is None:
+	input_dbname = "sd_" + str(int(filtered_interval)) + "_min_median_" +\
+		       coords + "_" + ftype + ".sqlite"
+    if output_dbname is None:
+	output_dbname = "sd_master_" + coords + "_" + ftype + ".sqlite"
+
+    input_table_1 = "all_radars"
+    output_table_1 = "master_all_radars"
+    input_table_2 = "master_all_radars"
+    output_table_2 = "master_summary_all_radars"
+
+    # create a log file to which any error occured will be written.
+    logging.basicConfig(filename="./log_files/master_table_" + ".log",
+                        level=logging.INFO)
+
+    if master_table:
+        # build a master table 
+        print "building a master table"
+        build_master_table(input_table_1, output_table_1,
+                           ftype=ftype, coords=coords,
+                           dbdir=dbdir, input_dbname=input_dbname,
+                           output_dbname=output_dbname)
+        print "A master table has been built"
+    return
 
 if __name__ == "__main__":
 
     # initialize parameters
-
     stms = [dt.datetime(2014, 12, 16, 13, 30)]
     etms = [dt.datetime(2014, 12, 16, 15, 0)]
 
@@ -278,33 +308,35 @@ if __name__ == "__main__":
     do_add_geolatc_geolonc = False
     do_convert_geo_to_mlt = False
     do_bin_to_grids = False 
-    do_median_filter = True
+    do_median_filter = False
+    do_create_master_db = True
+
+    db_name =  "sd_gridded_los_data_" + ftype + ".sqlite"
 
     # Move data from files to db 
     if do_move_to_db:
-	db_name =  "sd_gridded_los_data_" + ftype + ".sqlite"
 	move_to_db(stms, etms, rads, channels, db_name, ftype=ftype,
 		   dbdir=dbdir, run_in_parallel=run_in_parallel)
 
     # Add geolatc geolonc to db
     if do_add_geolatc_geolonc:
-	db_name = "sd_gridded_los_data_" + ftype + ".sqlite"
 	add_geolatc_geolonc(rads, stms, etms, ftype=ftype,
 			    db_name=db_name, dbdir=dbdir,
 			    run_in_parallel=run_in_parallel)
 	
     # Convert GEO to MLT
     if do_convert_geo_to_mlt:
-	db_name = "sd_gridded_los_data_" + ftype + ".sqlite"
 	convert_geo_to_mlt(rads, stms, etms, ftype=ftype,
 			   stay_in_geo=False, t_c_alt = 300.,
 			   db_name=db_name, dbdir=dbdir,
 			   run_in_parallel=run_in_parallel)
 
+    coords = "mlt"
+    filtered_interval=2.
+    input_dbname=None
+    output_dbname=None
     # Bin to MLAT-MLT-AZM grids
     if do_bin_to_grids:
-	db_name = "sd_gridded_los_data_" + ftype + ".sqlite"
-	coords = "mlt"
         bin_to_grids(rads, stms, etms, hemi="north",
 		     ftype=ftype, coords=coords,
 		     db_name=db_name, dbdir=dbdir,
@@ -313,9 +345,6 @@ if __name__ == "__main__":
     # Median filter the data in each MLAT-MLT-AZ bin
     # Also combine all the tables int one
     if do_median_filter:
-	filtered_interval=2.
-	input_dbname=None; output_dbname=None
-	coords = "mlt"
 	median_filter(rads, stms, etms, hemi="north",
 		      ftype = ftype, coords=coords,
 		      filtered_interval=filtered_interval,
@@ -323,4 +352,11 @@ if __name__ == "__main__":
 		      output_dbname=output_dbname,
 		      dbdir=dbdir, run_in_parallel=run_in_parallel)
 
+    # Creat a master table
+    if do_create_master_db:
+	create_master_db(ftype=ftype, coords=coords,
+			 filtered_interval=filtered_interval,
+			 input_dbname=input_dbname,
+			 output_dbname=output_dbname,
+			 dbdir=dbdir, master_table=True)
 
