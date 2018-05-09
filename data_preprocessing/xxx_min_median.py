@@ -42,7 +42,8 @@ def xxx_min_median(rad, stm, etm, ftype="fitacf", filtered_interval=2.,
     if input_dbname is None:
         input_dbname = "sd_gridded_los_data_" + ftype + ".sqlite"
     if output_dbname is None:
-        output_dbname = "sd_xxx_min_median_" + coords + "_" + ftype + ".sqlite"
+        output_dbname = "sd_" + str(int(filtered_interval)) + "_min_median_" +\
+                        coords + "_" + ftype + ".sqlite"
 
     # make a connection to gridded los db
     try:
@@ -62,6 +63,14 @@ def xxx_min_median(rad, stm, etm, ftype="fitacf", filtered_interval=2.,
 
     input_table = rad
     output_table = rad
+
+    # Check whether the table of interest exists
+    command = "SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}'"
+    command = command.format(table_name = input_table)
+    cur_in.execute(command)
+    if not cur_in.fetchall():
+        return
+
     # create a table
     if coords == "mlt":
         command = "CREATE TABLE IF NOT EXISTS {tb}" +\
@@ -209,8 +218,7 @@ def main(run_in_parallel=True):
     import multiprocessing as mp
     import logging
     
-    # create a log file to which any error occured between client and
-    # MySQL server communication will be written.
+    # create a log file to which any error occured  will be written.
     logging.basicConfig(filename="./log_files/xxx_min_median.log",
                         level=logging.INFO)
     # input parameters

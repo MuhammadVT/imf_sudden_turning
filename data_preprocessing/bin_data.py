@@ -151,8 +151,15 @@ def bin_to_grid(rad, stm=None, etm=None, ftype="fitacf",
     except Exception, e:
         logging.error(e, exc_info=True)
 
-    # add new columns
     table_name = rad
+    # Check whether the table of interest exists
+    command = "SELECT name FROM sqlite_master WHERE type='table' AND name='{table_name}'"
+    command = command.format(table_name = table_name)
+    cur.execute(command)
+    if not cur.fetchall():
+        return
+
+    # add new columns
     if coords == "mlt":
         col_glatc = "mag_glatc"   # glatc -> gridded latitude center
         col_gltc = "mag_gltc"     # mlt hour in degrees
