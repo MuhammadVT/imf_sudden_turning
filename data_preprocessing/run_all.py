@@ -190,6 +190,75 @@ def bin_to_grids(rads, stms, etms, hemi="north",
 	    for p in procs:
 		p.join()
 
+def median_filter(rads, stms, etms, hemi="north",
+		  ftype = "fitacf", coords="mlt",
+		  filtered_interval=2.,
+		  input_dbname=None, output_dbname=None,
+		  dbdir="../data/sqlite3/",
+                  run_in_parallel=False):
+    """ Bins the gridded data from a single radar into xxx-minute intervals.
+    e.g., at each xxx-minute interval, median vector in each azimuth bin within a grid cell is
+    selected as the representative velocity for that bin. 
+    The results are stored in a different db such that data from a given radar
+    are written into a single table named by the radar name.
+    Then it runs combine_xxx_min_median to combine all the table into one"""
+
+    from xxx_min_median import worker
+    from combine_xxx_min_median import combine_xxx_min_median
+
+    # create a log file to which any error occured will be written.
+    logging.basicConfig(filename="./log_files/xxx_min_median.log",
+                        level=logging.INFO)
+
+    # loop through the datetimes in stms
+    for i in range(len(stms)):
+        stm = stms[i]
+        etm = etms[i]
+
+	# store the multiprocess
+	procs = []
+	# loop through radars
+	for rad in rads:
+	    if run_in_parallel:
+		# cteate a process
+		worker_kwargs = {"ftype":ftype, "coords":coords,
+				 "filtered_interval":filtered_interval,
+				 "dbdir":dbdir, "input_dbname":input_dbname,
+				 "output_dbname":output_dbname}
+		p = mp.Process(target=worker, args=(rad, stm, etm),
+			       kwargs=worker_kwargs)
+		procs.append(p)
+
+		# run the process
+		p.start()
+
+	    else:
+		# run in serial
+		worker(rad, stm, etm, ftype=ftype,
+		       coords=coords, filtered_interval=filtered_interval,
+		       dbdir=dbdir, input_dbname=input_dbname,
+		       output_dbname=output_dbname)
+
+	if run_in_parallel:
+	    # make sure the processes terminate
+	    for p in procs:
+		p.join()
+
+    # take xxx minutes median values
+    print("moving xxx_min_median of " + str(rads) + " into all_radars table")
+    t1 = dt.datetime.now()
+    combine_xxx_min_median(rads, ftype=ftype, coords=coords,
+                           filtered_interval=filtered_interval,
+                           dbdir=dbdir, db_name=output_dbname)
+    t2 = dt.datetime.now()
+    print("Finished moving. It took " +\
+	  str((t2-t1).total_seconds() / 60.) + " mins\n")
+
+
+    return
+
+
+
 if __name__ == "__main__":
 
     # initialize parameters
@@ -208,7 +277,8 @@ if __name__ == "__main__":
     do_move_to_db = False
     do_add_geolatc_geolonc = False
     do_convert_geo_to_mlt = False
-    do_bin_to_grids = True
+    do_bin_to_grids = False 
+    do_median_filter = True
 
     # Move data from files to db 
     if do_move_to_db:
@@ -239,4 +309,18 @@ if __name__ == "__main__":
 		     ftype=ftype, coords=coords,
 		     db_name=db_name, dbdir=dbdir,
 		     run_in_parallel=run_in_parallel)
+
+    # Median filter the data in each MLAT-MLT-AZ bin
+    # Also combine all the tables int one
+    if do_median_filter:
+	filtered_interval=2.
+	input_dbname=None; output_dbname=None
+	coords = "mlt"
+	median_filter(rads, stms, etms, hemi="north",
+		      ftype = ftype, coords=coords,
+		      filtered_interval=filtered_interval,
+		      input_dbname=input_dbname,
+		      output_dbname=output_dbname,
+		      dbdir=dbdir, run_in_parallel=run_in_parallel)
+
 
