@@ -107,6 +107,17 @@ def geo_to_mlt(rad, stm=None, etm=None, ftype="fitacf",
         # pass if the column geo_azmc or mag_azmc exists
         pass
 
+    # add a new column for beam azm angle (in degrees) in mag coords
+    if not stay_in_geo:
+        try:
+        # add the bmazm angle relative to the magnetic (or geo) pole
+            command ="ALTER TABLE {tb} ADD COLUMN mag_bmazm REAL".format(tb=table_name) 
+            cur.execute(command)
+        except:
+            # pass if the column mag_bmazm exists
+            pass
+
+
     # do the convertion to all the data in db if stm and etm are all None
     if (stm is not None) and (etm is not None):
         command = "SELECT geo_latc, geo_lonc, bmazm, datetime FROM {tb} " +\
@@ -132,9 +143,9 @@ def geo_to_mlt(rad, stm=None, etm=None, ftype="fitacf",
                 latc = json.loads(latc)
                 lonc = json.loads(lonc)
 
-                # calculate bmazm (in degrees) in mag. coords if stay_in_geo is False.
-                # The return value is a comma seperated strings
-                azm_txt = geobmazm_to_magbmazm(rad, bmazm, latc, lonc, alt=t_c_alt,
+                # Calculates the LOS vel direction (in degrees) with respect to
+                # mag (or geo) pole for each vector in each range-beam cell.
+                azm_txt = geobmazm_to_magazm(rad, bmazm, latc, lonc, alt=t_c_alt,
                                                time=date_time.date(), stay_in_geo=stay_in_geo)
 
                 if stay_in_geo:
@@ -176,10 +187,14 @@ def geo_to_mlt(rad, stm=None, etm=None, ftype="fitacf",
                     command = command.format(tb=table_name, lonc=lonc,
                                              azm_txt=azm_txt, dtm=date_time)
                 else:
-                    command = "UPDATE {tb} SET mag_latc='{latc}', mag_ltc='{lonc}', " +\
+                    mag_bmazm = geobmazm_to_magbmazm(rad, bmazm, alt=t_c_alt,
+                                                     time=date_time.date(),
+                                                     stay_in_geo=stay_in_geo)
+                    command = "UPDATE {tb} SET mag_bmazm={mag_bmazm}, mag_latc='{latc}', mag_ltc='{lonc}', " +\
                               "mag_azmc='{azm_txt}' WHERE datetime = '{dtm}'"
-                    command = command.format(tb=table_name, latc=latc, lonc=lonc,
-                                     azm_txt=azm_txt, dtm=date_time)
+                    command = command.format(tb=table_name, mag_bmazm=mag_bmazm, 
+                                             latc=latc, lonc=lonc, azm_txt=azm_txt,
+                                             dtm=date_time)
 
                 # do the update
                 try:
@@ -201,8 +216,46 @@ def geo_to_mlt(rad, stm=None, etm=None, ftype="fitacf",
 
     return
 
-def geobmazm_to_magbmazm(rad, bmazm, latc, lonc, alt=300.,
+def geobmazm_to_magbmazm(rad, bmazm, alt=300.,
                          time=None, stay_in_geo=False):
+    """ Convert bmazm from geo to mag by adding
+        the magnetic declanation angle.
+    bmazm : float
+        bmazm of a certain beam in geo. 
+        0 degree shows the geo north direction
+        180 degree shows the geo south direction
+    alt : float, default to 300. [km]
+        altitude value at which coords. conversions take place.
+    time : datetime.datetime
+        Needed for geo to mlt conversion. Default to None. 
+    stay_in_geo : bool
+        if set to True no coords. conversion is done. Calculation would be in geo
+   
+    Return
+    ------
+    mag_bmazm : float
+        bmazm (in degrees) with respect to the magnetic pole
+
+    """
+    
+    from geomag import geomag
+    from datetime import date
+   
+    rad_lat, rad_lon = rad_loc_dict[rad]
+    rad_lon = rad_lon % 360
+    gm = geomag.GeoMag()
+    if stay_in_geo:
+        new_bmazm = (round(bmazm,2)) % 360
+    else:
+        # convert bmazm from geo to mag by adding
+        # the magnetic declanation angle
+        mg = gm.GeoMag(rad_lat, rad_lon, h=alt, time=time)
+        new_bmazm = (round(bmazm - mg.dec,2)) % 360
+
+    return new_bmazm
+
+def geobmazm_to_magazm(rad, bmazm, latc, lonc, alt=300.,
+                       time=None, stay_in_geo=False):
     """ calculates the LOS vel direction (in degrees) with respect to
     mag (or geo) pole for each vector in each range-beam cell.
    
