@@ -293,25 +293,47 @@ def create_master_db(ftype = "fitacf", coords="mlt",
 if __name__ == "__main__":
 
     # initialize parameters
-    stms = [dt.datetime(2014, 12, 16, 13, 30)]
-    etms = [dt.datetime(2014, 12, 16, 15, 0)]
+#    stms = [dt.datetime(2013, 2, 21, 3, 2)]
+#    etms = [dt.datetime(2013, 2, 21, 5, 2)]
+
+#################################################
+    # Create event list
+    import sys
+    sys.path.append("../data/")
+    from create_event_list import create_event_list
+    half_interval_length = 75.    # minutes
+    IMF_turning = "southward"
+    IMF_events = True
+    df_turn = create_event_list(IMF_events=IMF_events, IMF_turning=IMF_turning)
+
+    # Find the convection respond time
+    turn_dtms = [x.to_pydatetime() for x in df_turn.datetime]
+    lag_times = df_turn.lag_time.as_matrix()
+    event_dtms = [turn_dtms[i] + dt.timedelta(seconds=60. * lag_times[i])\
+		  for i in range(len(turn_dtms))]
+
+    # Construct stm and etm
+    stms = [x - dt.timedelta(seconds=60. * half_interval_length) for x in event_dtms]
+    etms = [x + dt.timedelta(seconds=60. * half_interval_length) for x in event_dtms]
+#################################################
+
 
     # NOTE: Do not forget to set the channel
     rads = ["wal", "bks", "fhe", "fhw", "cve", "cvw", "ade", "adw"]
     channels = [None, None, None, None, None, None, 'all', 'all']
 
     ftype = "fitacf"
+    db_name =  "sd_gridded_los_data_" + ftype + ".sqlite"
     dbdir = "../data/sqlite3/"
     run_in_parallel = False
 
+    # Control the processing procedures
     do_move_to_db = False
-    do_add_geolatc_geolonc = False
-    do_convert_geo_to_mlt = False
-    do_bin_to_grids = False 
-    do_median_filter = False
+    do_add_geolatc_geolonc = True
+    do_convert_geo_to_mlt = True
+    do_bin_to_grids = True
+    do_median_filter = True
     do_create_master_db = True
-
-    db_name =  "sd_gridded_los_data_" + ftype + ".sqlite"
 
     # Move data from files to db 
     if do_move_to_db:
