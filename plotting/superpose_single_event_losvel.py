@@ -40,10 +40,118 @@ def find_bmnum(rad, stm, etm, mag_bmazm=45,
 
     return bmnum
 
+def plot_imf(event_dtm, ax_imf=None, ax_theta=None,
+             stable_interval=30, ylim=[-10, 10],
+             dbdir="../data/sqlite3/", db_name="gmi_imf.sqlite",
+             table_name="IMF"):
+
+    """ Plots IMF centered at event_dtm with 2*stable_interval
+        minutes of interval"""
+
+    # make a connection
+    conn = sqlite3.connect(dbdir + db_name,
+                           detect_types = sqlite3.PARSE_DECLTYPES)
+    cur = conn.cursor()
+    stm = event_dtm - dt.timedelta(seconds=60. * stable_interval)
+    etm = event_dtm + dt.timedelta(seconds=60. * stable_interval)
+    # load data to a dataframe
+    command = "SELECT Bx, By, Bz, theta, datetime FROM {tb} " + \
+              "WHERE datetime BETWEEN '{stm}' AND '{etm}' "
+    command = command.format(tb=table_name, stm=stm, etm=etm)
+    df = pd.read_sql(command, conn)
+    dtms_tmp = pd.to_datetime(df.datetime)
+    df.loc[:, "relative_time"] = [(x-event_dtm).total_seconds()/60. for x in dtms_tmp]
+
+    # Plot IMF
+    if ax_imf:
+        ax_imf.plot(df.relative_time, df.Bz, "r", label="Bz")
+        ax_imf.plot(df.relative_time, df.By, "g", label="By")
+        ax_imf.axvline(x=0, color="r", linestyle="--", linewidth=1.)
+        ax_imf.set_ylim(ylim)
+        ax_imf.legend()
+
+    if ax_theta:
+        ax_theta.plot(df.relative_time, df.theta, "k", label="Clock Angle")
+        ax_theta.axvline(x=0, color="r", linestyle="--", linewidth=1.)
+        ax_theta.set_ylim([0, 360])
+        ax_theta.legend()
+
+    return
+
+def plot_aualae(event_dtm, ax_imf=None, ax_theta=None,
+                stable_interval=30, ylim_au=[0, 500],
+                ylim_al=[-500, 0], ylim_ae=[0, 500],
+                ylabel_fontsize=9, marker='.', linestyle='--',
+                markersize=2):
+
+    """ Plots AU, AL centered at event_dtm with 2*stable_interval
+        minutes of interval"""
+
+    import ae
+
+    fig, axes = plt.subplots(nrows=3, ncols=1, sharex=True)
+    # read AE data
+    AE_list = ae.readAeWeb(sTime=stime,eTime=etime,res=1)
+    #AE_list = gme.ind.readAeWeb(sTime=stime,eTime=etime,res=1)
+    #AE_list = gme.ind.readAe(sTime=stime,eTime=etime,res=1)
+    AE = []
+    AU = []
+    AL = []
+    AE_time = []
+    for m in range(len(AE_list)):
+        AU.append(AE_list[m].au)
+        AL.append(AE_list[m].al)
+        AE.append(AE_list[m].ae)
+        AE_time.append(AE_list[m].time)
+
+    # Select data of interest
+    indx = [AE_time.index(x) for x in AE_time if (x>= stime) and (x<=etime)]
+    AE_time = [AE_time[i] for i in indx]
+    AE = [AE[i] for i in indx]
+    AU = [AU[i] for i in indx]
+    AL = [AL[i] for i in indx]
+    # plot AU, AL, AE
+    ylabels = ["AU", "AL", "AE"]
+    ylims = [ylim_au, ylim_al, ylim_ae]
+    colors = ["k", "g", "r"]
+    for i, var in enumerate([AU, AL, AE]):
+        ax = axes[i]
+        ax.plot_date(AE_time, var, colors[i], marker=marker,
+                     linestyle=linestyle, markersize=markersize)
+        ax.set_ylabel(ylabels[i], fontsize=ylabel_fontsize)
+        ax.set_ylim([ylims[i][0], ylims[i][1]])
+        ax.locator_params(axis='y', nbins=4)
+
+    # format the datetime xlabels
+    if (etime-stime).days >= 2:
+        axes[-1].xaxis.set_major_formatter(DateFormatter('%m/%d'))
+        locs = axes[-1].xaxis.get_majorticklocs()
+        locs = locs[::2]
+        locs = np.append(locs, locs[-1]+1)
+        axes[-1].xaxis.set_ticks(locs)
+    if (etime-stime).days == 0:
+        axes[-1].xaxis.set_major_formatter(DateFormatter('%H:%M'))
+
+    # rotate xtick labels
+    plt.setp(axes[-1].get_xticklabels(), rotation=30)
+
+    # set axis label and title
+    axes[-1].set_xlabel('Time UT')
+    axes[-1].xaxis.set_tick_params(labelsize=11)
+    if (etime-stime).days > 0:
+        axes[0].set_title('  ' + 'Date: ' +\
+                stime.strftime("%m/%d/%Y") + ' - ' + (etime-dt.timedelta(days=1)).strftime("%m/%d/%Y")\
+                + '    AU, AL, AE Indices')
+    else:
+        axes[0].set_title(stime.strftime("%m/%d/%Y"))
+
+    return
+
 def plot_superposed_los(ax, event_dtm,
                         rads, stable_interval=30,
                         ftype="fitacf",
                         mag_bmazms=None,
+                        bmnums=None,
                         mag_latc_range=[55, 59],
                         method="mean", vel_maxlim=500,
                         IMF_turning="southward",
@@ -84,11 +192,14 @@ def plot_superposed_los(ax, event_dtm,
             mag_bmazm = 30
         else:
             mag_bmazm = mag_bmazms[i]
-        # Find bmnum that corresponds to mag_bmazm
-        bmnum = find_bmnum(rad, stm, etm, mag_bmazm=mag_bmazm,
-                           bmazm_diff=3.,
-                           db_name="sd_gridded_los_data_fitacf.sqlite",
-                           dbdir = "../data/sqlite3/")
+        if bmnums is None:
+            # Find bmnum that corresponds to mag_bmazm
+            bmnum = find_bmnum(rad, stm, etm, mag_bmazm=mag_bmazm,
+                               bmazm_diff=3.,
+                               db_name="sd_gridded_los_data_fitacf.sqlite",
+                               dbdir = "../data/sqlite3/")
+        else:
+            bmnum = bmnums[i]
 
         if bmnum:
             # load data to a dataframe
@@ -120,12 +231,12 @@ def plot_superposed_los(ax, event_dtm,
             dtms_tmp = pd.to_datetime(df.datetime)
             df.loc[:, "relative_time"] = [(x-event_dtm).total_seconds()/60. for x in dtms_tmp]
             lbl = "(" + rad + ",b" + str(bmnum) + "," + str(mag_bmazm) + ")"
+            #lbl = "(" + rad + ",b" + str(bmnum) + ")"
             xs = df.relative_time
             ys = [x if np.abs(x) < vel_maxlim else np.nan for x in df.loc[:, method+"_vel"]]
             ax.plot(xs, ys, marker='.', linestyle="-", label=lbl)
     ax.axvline(x=0, color="r", linestyle="--", linewidth=1.)
     ax.legend()
-    ax.set_title(event_dtm.strftime("%m/%d/%Y  %H:%M"))
 
     # Close conn
     conn.close()
@@ -187,41 +298,51 @@ def plot_superposed_gridded_los(ax, stable_interval=30,
 
 if __name__ == "__main__":
 
-    fig, ax = plt.subplots()
-#    IMF_turning = "southward"
-#    #IMF_turning = "northward"
-#    stable_interval=30
-#    plot_superposed_imf(ax, stable_interval=stable_interval,
-#                        IMF_turning=IMF_turning)
+    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(6,12),
+                             sharex=True)
+    ax_imf, ax_los = axes
+    ax_theta = None
+    stable_interval=30
+    IMF_turning = "southward"
 
-#    stm = dt.datetime(2014, 12, 16, 13, 30)
-#    etm = dt.datetime(2014, 12, 16, 15, 0)
-#    rad = "fhw"
+    #event_dtm = dt.datetime(2014, 12, 16, 14, 2)
+    #event_dtm = dt.datetime(2013, 11, 16, 7, 25)
+    event_dtm = dt.datetime(2013, 2, 21, 6, 10)
+
 #    bmnum = find_bmnum(rad, stm, etm, mag_bmazm=-30,
 #                    bmazm_diff=3.,
 #                    db_name="sd_gridded_los_data_fitacf.sqlite",
 #                    dbdir = "../data/sqlite3/")
 
-    #rads = ["wal", "bks", "fhe", "fhw", "cve", "cvw", "ade", "adw"]
-    rads = ["fhe", "fhw", "cve", "cvw"]
+    rads = ["wal", "bks", "fhe", "fhw", "cve", "cvw", "ade", "adw"]
+    #rads = ["fhe", "fhw", "cve"]
+    #rads = ["fhe", "fhw", "cve", "cvw"]
     #rads = ["cve", "cvw", "ade", "adw"]
-    azm_e = 20; azm_w = -20
-#    mag_bmazms=[azm_e, azm_w, azm_e, azm_w,
-#                azm_e, azm_w, azm_e, azm_w]
-    mag_bmazms=[azm_e, azm_w, azm_e, azm_w]
+    azm_e = 30; azm_w = -30
+    mag_bmazms=[azm_e, azm_w, azm_e, azm_w,
+                azm_e, azm_w, azm_e, azm_w]
+#    mag_bmazms=[azm_e, azm_w, azm_e]
+#    bmnums = [9] * len(rads)
+    bmnums = None
 
-    #event_dtm = dt.datetime(2014, 12, 16, 14, 2)
-    #event_dtm = dt.datetime(2013, 11, 16, 7, 25)
-    event_dtm = dt.datetime(2013, 11, 16, 7, 47)
-    df_dict = plot_superposed_los(ax, event_dtm,
-                                  rads, stable_interval=30,
+    # Plot IMF
+    plot_imf(event_dtm, ax_imf=ax_imf, ax_theta=ax_theta,
+             stable_interval=stable_interval, ylim=[-8, 8],
+             dbdir="../data/sqlite3/", db_name="gmi_imf.sqlite",
+             table_name="IMF")
+
+    # Plot LOS velocity 
+    df_dict = plot_superposed_los(ax_los, event_dtm,
+                                  rads, stable_interval=stable_interval,
                                   ftype="fitacf",
                                   mag_bmazms=mag_bmazms,
-                                  mag_latc_range=[55, 59],
+                                  bmnums=bmnums,
+                                  mag_latc_range=[55, 60],
                                   method="mean", vel_maxlim=200,
-                                  IMF_turning="northward",
+                                  IMF_turning=IMF_turning,
                                   db_name = None,
-                        dbdir = "../data/sqlite3/")
+                                  dbdir = "../data/sqlite3/")
 
-    ax.set_ylim([-150, 150])
+    ax_los.set_ylim([-150, 150])
+    ax_imf.set_title(event_dtm.strftime("%m/%d/%Y  %H:%M"))
     plt.show()
