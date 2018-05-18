@@ -34,7 +34,7 @@ def tec_to_db(stm, etm, inpDir = "/sd-data/med_filt_tec/",
 
         # Drop unwanted columns
         print("Droping unwanted columns and renaming other columns")
-        medFiltTECDF = medFiltTECDF.drop(columns=["dateStr", "timeStr", "dlat", "dlon"])
+        medFiltTECDF = medFiltTECDF.drop(labels=["dateStr", "timeStr", "dlat", "dlon"], axis=1)
         # Rename columns
         medFiltTECDF.columns = [x.lower() for x in medFiltTECDF.columns]
 
@@ -45,7 +45,7 @@ def tec_to_db(stm, etm, inpDir = "/sd-data/med_filt_tec/",
    
         # Write data to db
         print("Writing data to db")
-        df.to_sql(table_name, conn, if_exists="append")
+        df.to_sql(table_name, conn, if_exists="append", index=False)
         print("Done!")
 
     # Close db connection
