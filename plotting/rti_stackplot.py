@@ -1,14 +1,16 @@
-import sys
-sys.path.append("../data/")
-from create_event_list import create_event_list
-from funcs import find_bmnum
 import pandas as pd
 import numpy as np
 import datetime as dt
 import sqlite3
 import json
+from davitpy import pydarn
 import matplotlib.pyplot as plt
 plt.style.use("ggplot")
+import sys
+sys.path.append("../data/")
+from create_event_list import create_event_list
+from funcs import find_bmnum, add_cbar
+
 
 def plot_imf(event_dtm, ax_imf=None, ax_theta=None,
              stable_interval=30, ylim=[-10, 10],
@@ -55,8 +57,8 @@ def plot_imf(event_dtm, ax_imf=None, ax_theta=None,
 def plot_rti(ax, event_dtm, rad,
              bmnum=7, mag_bmazm=None,
              stable_interval=30, ftype="fitacf",
-             mag_latc_range=[53, 62], vel_maxlim=500,
-             cmap="jet", norm=None,
+             mag_latc_range=[53, 65], vel_maxlim=500,
+             cmap="jet", norm=None, scatter_plot=True,
              IMF_turning="southward", db_name = None,
              dbdir = "../data/sqlite3/"):
 
@@ -99,39 +101,111 @@ def plot_rti(ax, event_dtm, rad,
     ccoll = None
     if bmnum is not None:
         # load data to a dataframe
-        command = "SELECT vel, mag_latc, rad_mlt, bmnum, datetime FROM {tb} " + \
+        command = "SELECT vel, mag_latc, rad_mlt, bmnum, nrang, rsep, slist, datetime " +\
+                  "FROM {tb} " + \
                   "WHERE datetime BETWEEN '{stm}' AND '{etm}' "+\
                   "AND bmnum={bmnum}"
         command = command.format(tb=rad, stm=stm, etm=etm, bmnum=bmnum)
         df = pd.read_sql(command, conn)
+
         if not df.empty:
+            if scatter_plot:
+                xs = []
+                ys = []
+                cs = []
+            else:
+                xs = np.zeros(2*len(df.datetime))
+                # For geo or mag coords, get radar FOV lats/lons.
+                rmax = df.nrang.max()
+                fov_dtm = pd.to_datetime(df.datetime.tolist()[0])
+                rsep = df.rsep.unique().tolist()[0]
+                site = pydarn.radar.network().getRadarByCode(rad) \
+                       .getSiteByDate(fov_dtm)
+                myFov = pydarn.radar.radFov.fov(site=site, ngates=rmax,
+                                                nbeams=site.maxbeam,
+                                                rsep=rsep, coords="mag",
+                                                date_time=fov_dtm)
+                ys = myFov.latFull[bmnum]
+                cs = np.ones((len(xs), len(ys))) * np.nan
+
+#                fov_dtm = df.datetime.unique().tolist()
+#                rsep = df.rsep.unique().tolist()
+#                # check whether site parameters has changed within the interval of interest
+#                if len(fov_dtm) <= 1:
+#                    fov_dtm = fov_dtm[0]
+#                    rsep = rsep[0]
+#                    site = pydarn.radar.network().getRadarByCode(rad) \
+#                           .getSiteByDate(fov_dtm)
+#                    myFov = pydarn.radar.radFov.fov(site=site, ngates=rmax,
+#                                                    nbeams=site.maxbeam,
+#                                                    rsep=rsep, coords="mag",
+#                                                    date_time=fov_dtm)
+#                    ys = myFov.latFull[bmnum]
+#                    cs = np.ones((len(xs), len(ys))) * np.nan
+#
+#                else:
+#                    print("WARNING: more than one site/fov exist")
+#                    print("Setting scatter_plot to True")
+#                    scatter_plot = True
+#                    xs = []
+#                    ys = []
+#                    cs = []
+
+	    tcnt = 0
             for i, rw in df.iterrows():
                 vl = json.loads(rw.vel)
                 lat = json.loads(rw.mag_latc)
+                slst = json.loads(rw.slist)
+		dtm_tmp = pd.to_datetime(rw.datetime)
+		relative_time = (dtm_tmp-event_dtm).total_seconds()/60.
+		if scatter_plot:
+		    # Select data between the mag_latc_range
+		    vels_tmp = np.array([vl[i] for i in range(len(vl))\
+			    if (lat[i] >= mag_latc_range[0] and lat[i] <= mag_latc_range[1])])
+		    lats_tmp = np.array([lat[i] for i in range(len(lat))\
+			    if (lat[i] >= mag_latc_range[0] and lat[i] <= mag_latc_range[1])])
+		    xs.extend([relative_time]*len(lats_tmp))
+		    ys.extend(lats_tmp)
+		    cs.extend(vels_tmp)
 
-                # Select data between the mag_latc_range
-                vels_tmp = np.array([vl[i] for i in range(len(vl))\
-                        if (lat[i] >= mag_latc_range[0] and lat[i] <= mag_latc_range[1])])
-                lats_tmp = np.array([lat[i] for i in range(len(lat))\
-                        if (lat[i] >= mag_latc_range[0] and lat[i] <= mag_latc_range[1])])
+		else:
+		    # Build a list of datetimes to plot each data point at.
+		    xs[tcnt] = relative_time
+		    if(i < len(df) - 1): 
+                        dtm_tmp_next = pd.to_datetime(df.iloc[i+1, :].datetime)
+                        relative_time_next = (dtm_tmp_next-event_dtm).total_seconds()/60.
+                        if(relative_time_next - xs[tcnt] > 4.):
+                            tcnt += 1
+		            # hardcoded 1 minute step per data point
+		            # but only if time between data points is > 4 minutes
+		            xs[tcnt] = xs[tcnt - 1] + 1.
+		    tcnt += 1
+                    for j in range(len(slst)):
+                        cs[tcnt][slst[j]] = vl[j]
 
-                # Remove outliers
-                #vels_tmp = vels_tmp[np.where(vels_tmp-vels_tmp.mean()<=2*vels_tmp.std())]
-
-                # Plot the data
-                dtm_tmp = pd.to_datetime(rw.datetime)
-                relative_time = (dtm_tmp-event_dtm).total_seconds()/60.
-                xs = [relative_time]*len(lats_tmp)
-                ys = lats_tmp
+            # Plot the data
+            if scatter_plot:
                 ccoll = ax.scatter(xs, ys, s=4.0, zorder=1,
-                                   marker="s", c=vels_tmp,
+                                   marker="s", c=cs,
                                    linewidths=.5, edgecolors='face',
                                    cmap=cmap, norm=norm)
+            else:
+                # Remove np.nan in ys
+                if np.sum(np.isnan(ys)) > 0:
+                    idx = np.where(np.isnan(ys))[0][0]
+                    X, Y = np.meshgrid(xs[:tcnt], ys[:idx])
+                    Z = np.ma.masked_where(np.isnan(cs[:tcnt, :idx].T), cs[:tcnt, :idx].T)
+                else:
+                    X, Y = np.meshgrid(xs[:tcnt], ys)
+                    Z = np.ma.masked_where(np.isnan(cs[:tcnt, :].T), cs[:tcnt, :].T)
+                ccoll = ax.pcolormesh(X, Y, Z, edgecolor=None, cmap=cmap, norm=norm)
+
+            # Annotate the starting MLT location of the radar
             rad_mlt_loc = round(df.rad_mlt.as_matrix()[0]/15.,1)
             lbl = rad + ",b" + str(bmnum) + "\nMLT=" + str(rad_mlt_loc)
             ax.annotate(lbl, xy=(0.90, 0.1), xycoords="axes fraction", fontsize=8)
     ax.set_ylabel("MLAT", fontsize=8)
-    ax.set_ylim([mag_latc_range[0]-1, mag_latc_range[1]+1])
+    ax.set_ylim([mag_latc_range[0], mag_latc_range[1]])
     ax.axvline(x=0, color="r", linestyle="--", linewidth=1.)
 
     # Close conn
@@ -139,54 +213,26 @@ def plot_rti(ax, event_dtm, rad,
 
     return ccoll
 
-def add_cbar(fig, mappable, label="Velocity [m/s]", cax=None,
-             ax=None, shrink=0.65, title_size=14,
-             ytick_label_size=12):
-
-    # add color bar
-    if cax:
-        cbar=fig.colorbar(mappable, ax=ax, cax=cax,
-                          orientation="vertical", drawedges=False)
-    else:
-        cbar=fig.colorbar(mappable, ax=ax, cax=cax, shrink=shrink,
-                          orientation="vertical", drawedges=False)
-
-#    #define the colorbar labels
-#    l = []
-#    for i in range(0,len(bounds)):
-#        if i == 0 or i == len(bounds)-1:
-#            l.append(' ')
-#            continue
-#        l.append(str(int(bounds[i])))
-#    cbar.ax.set_yticklabels(l)
-    cbar.ax.tick_params(axis='y',direction='in')
-    cbar.set_label(label)
-
-    #set colorbar ticklabel size
-    for ti in cbar.ax.get_yticklabels():
-        ti.set_fontsize(ytick_label_size)
-    cbar.set_label(label, size=title_size)
-    cbar.extend='max'
-
-
 
 if __name__ == "__main__":
 
     from matplotlib.colors import BoundaryNorm, Normalize
 
     stable_interval=30
-    #IMF_turning = "southward"
-    IMF_turning = "northward"
+    IMF_turning = "southward"
+    imf_ylim = [-10, 10]
+    #IMF_turning = "northward"
+    scatter_plot = False
     cmap="jet_r"
     norm = Normalize(vmin=-100,vmax=100)
 
     #event_dtm = dt.datetime(2014, 12, 16, 14, 2)
-    #event_dtm = dt.datetime(2015, 1, 5, 3, 44)
-    event_dtm = dt.datetime(2014, 1, 1, 8, 0)
+    #event_dtm = dt.datetime(2013, 2, 21, 5, 34)
+    event_dtm = dt.datetime(2015, 3, 29, 9, 49)
 
     #rads = ["wal", "bks", "fhe", "fhw", "cve", "cvw", "ade", "adw"]
-    #rads = ["cve", "cvw", "ade", "adw"] 
-    rads = ["wal", "bks", "fhe", "fhw"]
+    #rads = ["wal", "bks", "fhe", "fhw"]
+    rads = ["cve", "cvw", "ade", "adw"] 
     #rads = ["fhe", "fhw"]
     #rads = ["cve", "cvw"]
     #rads = ["cve", "ade"]
@@ -207,7 +253,7 @@ if __name__ == "__main__":
                                        bmnum=bmnum, mag_bmazm=None,
                                        stable_interval=stable_interval,
                                        ftype="fitacf", mag_latc_range=[53, 65],
-                                       cmap=cmap, norm=norm,
+                                       cmap=cmap, norm=norm, scatter_plot=scatter_plot,
                                        IMF_turning=IMF_turning, db_name = None,
                                        dbdir = "../data/sqlite3/")
             if losvel_mappable:
@@ -232,17 +278,29 @@ if __name__ == "__main__":
     ax_theta = None
     # Plot IMF
     plot_imf(event_dtm, ax_imf=ax_imf, ax_theta=ax_theta,
-             stable_interval=stable_interval, ylim=[-12, 12],
+             stable_interval=stable_interval, ylim=imf_ylim,
              dbdir="../data/sqlite3/", db_name="gmi_imf.sqlite",
              table_name="IMF")
 
     # Plot AU, AL
-    plot_aualae(event_dtm, ax_ae, plot_ae=False,
+    plot_aualae(event_dtm, ax_ae, plot_ae=True,
                 stable_interval=stable_interval, ylim_au=[0, 500],
                 ylim_al=[-500, 0], ylabel_fontsize=9,
                 marker='.', linestyle='--')
+
+    ax_imf.set_title(event_dtm.strftime("%m/%d/%Y  %H:%M"))
 ##############################
 
     #plt.show()
-    fig.savefig("/home/muhammad/Dropbox/tmp/fig1.png", dpi=200, bbox_inches="tight")
-    fig2.savefig("/home/muhammad/Dropbox/tmp/fig2.png",dpi=200,  bbox_inches="tight")
+    fig_dir = "../plots/rti_stackplot/"
+    if scatter_plot:
+        fig_name = "scatter_losvel_" + event_dtm.strftime("%Y%m%d.%H%M_") + IMF_turning + "_" + "_".join(rads)
+    else:
+        fig_name = "losvel_" + event_dtm.strftime("%Y%m%d.%H%M_") + IMF_turning + "_" + "_".join(rads)
+    fig2_name = "imf_aual_" + event_dtm.strftime("%Y%m%d.%H%M_") + IMF_turning
+    #fig.savefig("/home/muhammad/Dropbox/tmp/fig1.png", dpi=200, bbox_inches="tight")
+    #fig2.savefig("/home/muhammad/Dropbox/tmp/fig2.png",dpi=200,  bbox_inches="tight")
+    fig.savefig(fig_dir + fig_name + ".png", dpi=200, bbox_inches="tight")
+    fig2.savefig(fig_dir + fig2_name + ".png", dpi=200,  bbox_inches="tight")
+    plt.close(fig)
+    plt.close(fig2)
