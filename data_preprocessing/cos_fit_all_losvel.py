@@ -5,12 +5,13 @@ import sqlite3
 
 def cosfit_superposed_epoch(input_table, output_table, db_name=None,
                             dbdir="../data/sqlite3/", ftype="fitacf", coords="mlt",
-                            start_reltime=-30, reltime_resolution=2, end_reltime=30,
+                            reltime_list=[-20, 20], reltime_resolution=2,
                             mlt_width=1., fit_by_bmazm=False, fit_by_losvel_azm=True,
-                            abs_azm_maxlim = 90.,
-                            sqrt_weighting=False):
+                            abs_azm_maxlim = 90., abs_losvel_maxlim=500.,
+                            fitvel_bounds=(-1000., 1000.), 
+                            unique_azm_count_minlim=3, weighting=None):
     
-    """ Does cosine fitting to the LOS data in each MLAT/MLT grid, 
+    """ Does cosine fitting to all the LOS data in each MLAT/MLT grid, 
     and stores the results in a different table named "master_cosfit_superposed". 
 
     Parameters
@@ -26,13 +27,11 @@ def cosfit_superposed_epoch(input_table, output_table, db_name=None,
     coords : str
         Coordinates in which the binning process took place.
         Default to "mlt, can be "geo" as well. 
-    start_reltime : int
-        The start of the relative time, e.g., -30,  where fitting starts
-    end_reltime : int
-        The end of the relative time, e.g., 30, where fitting stops
+    reltime_list : a list of int
+        The start of the relative time, e.g., -30, -20, 20, -30, ...,
     reltime_resolution : int
         The time resolution (in minutes) of the fitted data
-        e.g.,  for start_reltime=-30 and reltime_resolution=2, the relative time range
+        e.g.,  for reltime=-30 and reltime_resolution=2, the relative time range
         for a cos-fitting procedure would be [-30, -29]
     mlt_width : float
         The width of MLT region within which cosine fitting will be performed.
@@ -45,8 +44,11 @@ def cosfit_superposed_epoch(input_table, output_table, db_name=None,
     abs_azm_maxlim : float
         The absolute value of the maximum los vel. azm. (or mag. bmazm) beyond which data will be discarded.
         have to be qualified for cosfitting. 
-    sqrt_weighting : bool
-        if set to False, all azimuthal bins are
+    fitvel_bounds : tuple
+        Values to put bounds on estimated 2-D vels
+    weighting : str (Default to None)
+        Type of weighting used for curve fitting
+        if set to None, all azimuthal bins are
         considered equal regardless of the nubmer of points
         each of them contains.
 
@@ -70,10 +72,8 @@ def cosfit_superposed_epoch(input_table, output_table, db_name=None,
         logging.error(e, exc_info=True)
 
     # set output_table name
-    if sqrt_weighting:
-        output_table = output_table
-    else:
-        output_table = output_table
+    if weighting is not None:
+        output_table = output_table + "_" + weighting + "_weight"
 
     # create output_table
     if coords == "mlt":
@@ -127,7 +127,7 @@ def cosfit_superposed_epoch(input_table, output_table, db_name=None,
         logging.error(e, exc_info=True)
 
     # Do the fitting for each range of relative time with a given relative time resolution
-    for reltm in range(start_reltime, end_reltime+reltime_resolution, reltime_resolution):
+    for reltm in reltime_list:
         sreltm = reltm
         ereltm = reltm + (reltime_resolution-1)
         # query  the data
@@ -156,9 +156,13 @@ def cosfit_superposed_epoch(input_table, output_table, db_name=None,
                 where_clause = "AND ({gltc} BETWEEN {gltc_left} AND {gltc_right}) "
             command = "SELECT vel, {gazmc} FROM {tb2} " +\
                       "WHERE {glatc}={lat} " + where_clause + \
+                      "AND (relative_time BETWEEN {sreltm} AND {ereltm}) " +\
+                      "AND ABS(vel) <= {abs_losvel_maxlim} "+\
                       "ORDER BY {gazmc}"
             command = command.format(tb2=input_table, glatc=col_glatc, gltc=col_gltc,
                                      gltc_left=gltc_left, gltc_right=gltc_right, 
+                                     sreltm=sreltm, ereltm=ereltm,
+                                     abs_losvel_maxlim=abs_losvel_maxlim,
                                      gazmc=col_gazmc, lat=lats[ii])
             try:
                 cur.execute(command)
@@ -175,18 +179,26 @@ def cosfit_superposed_epoch(input_table, output_table, db_name=None,
                 los_vel = [los_vel[i] for i in range(len(los_vel))\
                            if abs(azm[i]) <= abs_azm_maxlim]
                 azm = [x for x in azm if abs(x) <= abs_azm_maxlim]
-                vel_count = len(azm)
-                if vel_count < 3:
+                vel_count = len(los_vel)
+                unique_azm_count = len(np.unique(azm))
+                if unique_azm_count <= unique_azm_count_minlim:
                     continue
                 azm_span = np.max(azm) - np.min(azm)
 
-                if sqrt_weighting:
-                    sigma =  np.array([1.0 for x in azm])
+                if weighting == "std":
+                    los_vel_tmp = np.array(los_vel)
+                    #std_val_tmp = np.std(los_vel_tmp[np.where(azm==azm[i])])
+                    # Calculate std values of losvels in each azm bin.
+                    # Add 1. to avoid having 0. values
+                    sigma =  np.array([1. + np.std(los_vel_tmp[np.where(azm==x)]) for x in azm])
                 else:
                     sigma =  np.array([1.0 for x in azm])
 
                 # do cosine fitting with weight
-                fitpars, perrs = cos_curve_fit(azm, los_vel, sigma)
+                try:
+                    fitpars, perrs = cos_curve_fit(azm, los_vel, sigma, bounds=fitvel_bounds)
+                except:
+                    continue
                 vel_mag = round(fitpars[0],2)
                 vel_dir = round(np.rad2deg(fitpars[1]) % 360,1)
                 vel_mag_err = round(perrs[0],2)
@@ -226,10 +238,10 @@ def cosfunc(x, Amp, phi):
     import numpy as np
     return Amp * np.cos(1 * x - phi)
 
-def cos_curve_fit(azms, vels, sigma):
+def cos_curve_fit(azms, vels, sigma, bounds=(-np.inf, np.inf)):
     import numpy as np
     from scipy.optimize import curve_fit
-    fitpars, covmat = curve_fit(cosfunc, np.deg2rad(azms), vels, sigma=sigma)
+    fitpars, covmat = curve_fit(cosfunc, np.deg2rad(azms), vels, sigma=sigma, bounds=bounds)
     perrs = np.sqrt(np.diag(covmat)) 
 
     return fitpars, perrs
@@ -242,27 +254,37 @@ def main():
     start_reltime = -30
     end_reltime = 30
     reltime_resolution = 2
+    #reltime_list = range(start_reltime, end_reltime+reltime_resolution, reltime_resolution)
+    #reltime_list = [-30, -20, -10, -6, 0, 6, 10, 20, 30]
+    reltime_list = [-20, 20]
     mlt_width = 1.
     fit_by_bmazm=False   # Not implemented yet
     fit_by_losvel_azm = True
     abs_azm_maxlim = 75
+    abs_losvel_maxlim=300
+    unique_azm_count_minlim=3 
+    fitvel_bounds=(-300., 300.)
+    weighting = "std"
+    #weighting = None     # No weighting is used
 
     input_table = "master_superposed_epoch"
     output_table = "master_cosfit_superposed_mltwidth_" + str(int(mlt_width)) +\
                    "_res_" + str(reltime_resolution) + "min"
 
-    cosfit_superposed_epoch(input_table, output_table, db_name=None,
-                            dbdir="../data/sqlite3/", ftype="fitacf", coords="mlt",
-                            start_reltime=start_reltime, reltime_resolution=reltime_resolution,
-                            end_reltime=end_reltime, mlt_width=mlt_width,
-                            fit_by_bmazm=fit_by_bmazm, fit_by_losvel_azm=fit_by_losvel_azm,
-                            abs_azm_maxlim=abs_azm_maxlim, sqrt_weighting=False)
-
-
     # create a log file to which any error occured between client and
     # MySQL server communication will be written.
     logging.basicConfig(filename="./log_files/master_cosfit_superposed.log",
                         level=logging.INFO)
+
+    cosfit_superposed_epoch(input_table, output_table, db_name=None,
+                            dbdir="../data/sqlite3/", ftype="fitacf", coords="mlt",
+                            reltime_list=reltime_list, reltime_resolution=reltime_resolution,
+                            mlt_width=mlt_width,
+                            fit_by_bmazm=fit_by_bmazm, fit_by_losvel_azm=fit_by_losvel_azm,
+                            abs_azm_maxlim=abs_azm_maxlim, abs_losvel_maxlim=abs_losvel_maxlim,
+                            unique_azm_count_minlim=unique_azm_count_minlim, 
+                            fitvel_bounds=fitvel_bounds,
+                            weighting=weighting)
 
 
     return
