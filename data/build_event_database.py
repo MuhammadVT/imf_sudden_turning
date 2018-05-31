@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 import datetime as dt
 
-def build_event_database(IMF_turning="northward", event_status="good"):
+def build_event_database(IMF_turning="northward", event_status="good",
+                         radar_response="yes"):
 
     """Builds a dataframe for events of interest
 
@@ -13,40 +14,75 @@ def build_event_database(IMF_turning="northward", event_status="good"):
 
     """
     # Northward Turning Events
-    events = [{"datetime": dt.datetime(2013, 2, 21, 5, 34),   "rad":"cve",  "bmnum":7,   "lag_time":10,  "turn_flag":0,  "mlt":21,  "bmdir":"east",   "event_status":"good", "comment":None}, 
-              {"datetime": dt.datetime(2013, 2, 21, 5, 34),   "rad":"cvw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,  "mlt":21,  "bmdir":"west",   "event_status":"good", "comment":None}, 
-              {"datetime": dt.datetime(2013, 2, 21, 5, 34),   "rad":"fhe",  "bmnum":7,   "lag_time":15,  "turn_flag":0,  "mlt":23,  "bmdir":"east",   "event_status":"good", "comment":None}, 
-              {"datetime": dt.datetime(2013, 2, 21, 5, 34),   "rad":"fhw",  "bmnum":13,  "lag_time":21,  "turn_flag":0,  "mlt":23,  "bmdir":"west",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2013, 2, 21, 5, 34),   "rad":"bks",  "bmnum":19,  "lag_time":10,  "turn_flag":0,  "mlt":0,   "bmdir":"west",   "event_status":"bad",  "comment":"Confusing"},
-              {"datetime": dt.datetime(2015, 2, 1, 9, 51),    "rad":"adw",  "bmnum":13,  "lag_time":20,  "turn_flag":0,  "mlt":21,  "bmdir":"west",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2015, 2, 1, 9, 51),    "rad":"cve",  "bmnum":1,   "lag_time":15,  "turn_flag":0,  "mlt":0,   "bmdir":"east",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2015, 2, 1, 9, 51),    "rad":"cvw",  "bmnum":19,  "lag_time":21,  "turn_flag":0,  "mlt":0,   "bmdir":"west",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2015, 2, 1, 9, 51),    "rad":"fhe",  "bmnum":7,   "lag_time":21,  "turn_flag":0,  "mlt":3,   "bmdir":"east",   "event_status":"good", "comment":None}, 
-              {"datetime": dt.datetime(2015, 2, 1, 9, 51),    "rad":"fhw",  "bmnum":13,  "lag_time":16,  "turn_flag":0,  "mlt":3,   "bmdir":"west",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2015, 2, 1, 9, 51),    "rad":"bks",  "bmnum":13,  "lag_time":15,  "turn_flag":0,  "mlt":5,   "bmdir":"west",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2013, 11, 16, 7, 49),  "rad":"cvw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,  "mlt":23,  "bmdir":"west",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2013, 11, 16, 7, 49),  "rad":"cve",  "bmnum":1,   "lag_time":10,  "turn_flag":0,  "mlt":0,   "bmdir":"east",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2013, 11, 16, 7, 49),  "rad":"fhe",  "bmnum":7,   "lag_time":20,  "turn_flag":0,  "mlt":1,   "bmdir":"east",   "event_status":"bad",  "comment":"Confusing"},
-              {"datetime": dt.datetime(2013, 11, 16, 7, 49),  "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,  "mlt":1,   "bmdir":"west",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2013, 11, 16, 7, 49),  "rad":"bks",  "bmnum":13,  "lag_time":10,  "turn_flag":0,  "mlt":3,   "bmdir":"west",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2014, 1, 3, 9, 28),    "rad":"cve",  "bmnum":1,   "lag_time":21,  "turn_flag":0,  "mlt":0,   "bmdir":"east",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2014, 1, 3, 9, 28),    "rad":"adw",  "bmnum":18,  "lag_time":10,  "turn_flag":0,  "mlt":21,  "bmdir":"west",   "event_status":"bad",  "comment":"Confusing"}, 
-              {"datetime": dt.datetime(2014, 1, 3, 9, 28),    "rad":"cvw",  "bmnum":19,  "lag_time":9,   "turn_flag":0,  "mlt":0,   "bmdir":"west",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2015, 1, 26, 10, 8),   "rad":"cve",  "bmnum":1,   "lag_time":12,  "turn_flag":0,  "mlt":0,   "bmdir":"east",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2015, 1, 26, 10, 8),   "rad":"cve",  "bmnum":7,   "lag_time":10,  "turn_flag":0,  "mlt":1,   "bmdir":"east",   "event_status":"bad",  "comment":"SAPS to SAIS after IMF turning"},
-              {"datetime": dt.datetime(2015, 1, 26, 10, 8),   "rad":"cvw",  "bmnum":13,  "lag_time":15,  "turn_flag":0,  "mlt":1,   "bmdir":"west",   "event_status":"good", "comment":None}, 
-              {"datetime": dt.datetime(2015, 1, 26, 10, 8),   "rad":"fhe",  "bmnum":7,   "lag_time":10,  "turn_flag":0,  "mlt":3,   "bmdir":"east",   "event_status":"good", "comment":"Not clear"},
-              {"datetime": dt.datetime(2015, 1, 26, 10, 8),   "rad":"fhw",  "bmnum":13,  "lag_time":20,  "turn_flag":0,  "mlt":3,   "bmdir":"west",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2015, 1, 26, 10, 8),   "rad":"bks",  "bmnum":13,  "lag_time":15,  "turn_flag":0,  "mlt":5,   "bmdir":"west",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2014, 1, 1, 8, 00),    "rad":"fhe",  "bmnum":7,   "lag_time":12,  "turn_flag":0,  "mlt":1,   "bmdir":"east",   "event_status":"bad",  "comment":"Confusing"}, 
-              {"datetime": dt.datetime(2014, 1, 1, 8, 00),    "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,  "mlt":1,   "bmdir":"west",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2014, 3, 1, 9, 20),    "rad":"cve",  "bmnum":7,   "lag_time":20,  "turn_flag":0,  "mlt":1,   "bmdir":"east",   "event_status":"bad",  "comment":"Confusing"}, 
-              {"datetime": dt.datetime(2014, 3, 1, 9, 20),    "rad":"fhw",  "bmnum":13,  "lag_time":12,  "turn_flag":0,  "mlt":1,   "bmdir":"west",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2014, 3, 1, 9, 20),    "rad":"fhe",  "bmnum":7,   "lag_time":22,  "turn_flag":0,  "mlt":3,   "bmdir":"east",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2014, 3, 1, 9, 20),    "rad":"bks",  "bmnum":13,  "lag_time":22,  "turn_flag":0,  "mlt":3,   "bmdir":"west",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2014, 12, 16, 14, 02), "rad":"adw",  "bmnum":13,  "lag_time":15,  "turn_flag":0,  "mlt":1,   "bmdir":"west",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2014, 12, 16, 14, 02), "rad":"ade",  "bmnum":7,   "lag_time":17,  "turn_flag":0,  "mlt":3,   "bmdir":"east",   "event_status":"good", "comment":None},
-              {"datetime": dt.datetime(2014, 12, 16, 14, 02), "rad":"cve",  "bmnum":7,   "lag_time":10,  "turn_flag":0,  "mlt":5,   "bmdir":"east",   "event_status":"good", "comment":None}]
+    events = [{"datetime": dt.datetime(2013, 2, 21, 5, 34),   "rad":"cve",  "bmnum":7,   "lag_time":20,  "turn_flag":0,    "mlt":21,   "bmdir":"east",   "event_status":"good",  "same_lagtime":"yes",  "comment":None}, 
+              {"datetime": dt.datetime(2013, 2, 21, 5, 34),   "rad":"cvw",  "bmnum":13,  "lag_time":20,  "turn_flag":0,    "mlt":21,   "bmdir":"west",   "event_status":"good",  "same_lagtime":"yes",  "comment":None}, 
+              {"datetime": dt.datetime(2013, 2, 21, 5, 34),   "rad":"fhe",  "bmnum":7,   "lag_time":20,  "turn_flag":0,    "mlt":23,   "bmdir":"east",   "event_status":"good",  "same_lagtime":"yes",  "comment":None}, 
+              {"datetime": dt.datetime(2013, 2, 21, 5, 34),   "rad":"fhw",  "bmnum":13,  "lag_time":20,  "turn_flag":0,    "mlt":23,   "bmdir":"west",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2013, 2, 21, 5, 34),   "rad":"bks",  "bmnum":13,  "lag_time":20,  "turn_flag":0,    "mlt":23,   "bmdir":"west",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2015, 2, 1, 9, 51),    "rad":"adw",  "bmnum":13,  "lag_time":15,  "turn_flag":0,    "mlt":21,   "bmdir":"west",   "event_status":"bad",   "same_lagtime":"yes",  "comment":"Confusing, not enough data"},
+              {"datetime": dt.datetime(2015, 2, 1, 9, 51),    "rad":"cve",  "bmnum":1,   "lag_time":15,  "turn_flag":0,    "mlt":0,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2015, 2, 1, 9, 51),    "rad":"cvw",  "bmnum":19,  "lag_time":15,  "turn_flag":0,    "mlt":0,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2015, 2, 1, 9, 51),    "rad":"fhe",  "bmnum":7,   "lag_time":15,  "turn_flag":0,    "mlt":3,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"yes",  "comment":"Oposite response"}, 
+              {"datetime": dt.datetime(2015, 2, 1, 9, 51),    "rad":"fhw",  "bmnum":13,  "lag_time":15,  "turn_flag":0,    "mlt":3,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2015, 2, 1, 9, 51),    "rad":"bks",  "bmnum":13,  "lag_time":15,  "turn_flag":0,    "mlt":5,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2013, 11, 16, 7, 49),  "rad":"cvw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":23,   "bmdir":"west",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2013, 11, 16, 7, 49),  "rad":"cve",  "bmnum":1,   "lag_time":10,  "turn_flag":0,    "mlt":0,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2013, 11, 16, 7, 49),  "rad":"fhe",  "bmnum":7,   "lag_time":10,  "turn_flag":0,    "mlt":1,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"yes",  "comment":"Confusing"},
+              {"datetime": dt.datetime(2013, 11, 16, 7, 49),  "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":1,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2013, 11, 16, 7, 49),  "rad":"bks",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":3,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2014, 1, 3, 9, 28),    "rad":"cve",  "bmnum":1,   "lag_time":21,  "turn_flag":0,    "mlt":0,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2014, 1, 3, 9, 28),    "rad":"adw",  "bmnum":13,  "lag_time":21,  "turn_flag":0,    "mlt":21,   "bmdir":"west",   "event_status":"good",  "same_lagtime":"yes",  "comment":"Confusing"}, 
+              {"datetime": dt.datetime(2014, 1, 3, 9, 28),    "rad":"cvw",  "bmnum":19,  "lag_time":21,  "turn_flag":0,    "mlt":0,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2015, 1, 26, 10, 8),   "rad":"cve",  "bmnum":1,   "lag_time":15,  "turn_flag":0,    "mlt":0,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2015, 1, 26, 10, 8),   "rad":"cve",  "bmnum":7,   "lag_time":15,  "turn_flag":0,    "mlt":1,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"yes",  "comment":"SAPS to SAIS after IMF turning"},
+              {"datetime": dt.datetime(2015, 1, 26, 10, 8),   "rad":"cvw",  "bmnum":13,  "lag_time":15,  "turn_flag":0,    "mlt":1,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"yes",  "comment":None}, 
+              {"datetime": dt.datetime(2015, 1, 26, 10, 8),   "rad":"fhe",  "bmnum":7,   "lag_time":15,  "turn_flag":0,    "mlt":3,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"yes",  "comment":"Response Not clear"},
+              {"datetime": dt.datetime(2015, 1, 26, 10, 8),   "rad":"fhw",  "bmnum":13,  "lag_time":15,  "turn_flag":0,    "mlt":3,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2015, 1, 26, 10, 8),   "rad":"bks",  "bmnum":13,  "lag_time":15,  "turn_flag":0,    "mlt":5,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2014, 1, 1, 8, 0),     "rad":"fhe",  "bmnum":1,   "lag_time":12,  "turn_flag":0,    "mlt":0,    "bmdir":"east",   "event_status":"bad",   "same_lagtime":"yes",  "comment":"Response not clear"}, 
+              {"datetime": dt.datetime(2014, 1, 1, 8, 0),     "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":1,    "bmdir":"west",   "event_status":"bad",   "same_lagtime":"yes",  "comment":"Response not clear"},
+              {"datetime": dt.datetime(2014, 3, 1, 9, 20),    "rad":"cve",  "bmnum":7,   "lag_time":22,  "turn_flag":0,    "mlt":1,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"yes",  "comment":None}, 
+              {"datetime": dt.datetime(2014, 3, 1, 9, 20),    "rad":"fhw",  "bmnum":13,  "lag_time":22,  "turn_flag":0,    "mlt":1,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2014, 3, 1, 9, 20),    "rad":"fhe",  "bmnum":7,   "lag_time":22,  "turn_flag":0,    "mlt":3,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2014, 3, 1, 9, 20),    "rad":"bks",  "bmnum":13,  "lag_time":22,  "turn_flag":0,    "mlt":3,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"yes",  "comment":None},
+              {"datetime": dt.datetime(2014, 12, 16, 14, 02), "rad":"adw",  "bmnum":13,  "lag_time":15,  "turn_flag":0,    "mlt":1,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"no",   "comment":None},
+              {"datetime": dt.datetime(2014, 12, 16, 14, 02), "rad":"ade",  "bmnum":7,   "lag_time":15,  "turn_flag":0,    "mlt":3,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"no",   "comment":None},
+              {"datetime": dt.datetime(2014, 12, 16, 14, 02), "rad":"cve",  "bmnum":7,   "lag_time":15,  "turn_flag":0,    "mlt":5,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"no",   "comment":None},
+              {"datetime": dt.datetime(2015, 10, 3, 5, 45),   "rad":"ade",  "bmnum":7,   "lag_time":10,  "turn_flag":0,    "mlt":19,   "bmdir":"east",   "event_status":None,    "same_lagtime":"yes",  "comment":"Short lived, very clear overshielding in premidnight sector"},
+              {"datetime": dt.datetime(2015, 10, 3, 5, 45),   "rad":"cve",  "bmnum":7,   "lag_time":10,  "turn_flag":0,    "mlt":22,   "bmdir":"east",   "event_status":None,    "same_lagtime":"yes",  "comment":"Short lived, very clear overshielding in premidnight sector"},
+              {"datetime": dt.datetime(2015, 10, 3, 5, 45),   "rad":"cvw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":19,   "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"Short lived, response is not very clear"},
+              {"datetime": dt.datetime(2015, 10, 3, 5, 45),   "rad":"adw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":19,   "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"Short lived, very clear overshielding in premidnight sector"},
+              {"datetime": dt.datetime(2015, 10, 5, 4, 50),   "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":19,   "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"Response not clear, check for other radars for this turning"},
+              {"datetime": dt.datetime(2015, 10, 18, 5, 45),  "rad":"bks",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":21,   "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"clear overshielding response in bks data, check for other radars for this turning"},
+              {"datetime": dt.datetime(2015, 11, 16, 6, 0),   "rad":"bks",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"clear overshielding response in bks data, not enough coverage from other radars"},
+              {"datetime": dt.datetime(2015, 12, 3, 14, 15),  "rad":"adw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"clear overshielding response in adw data, check for other radars"},
+              {"datetime": dt.datetime(2015, 12, 7, 8, 0),    "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"Short lived, very clear overshielding in several radars"},
+              {"datetime": dt.datetime(2015, 12, 22, 11, 35), "rad":"cvw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"clear overshielding in cvw, check for other radars"},
+              {"datetime": dt.datetime(2015, 12, 25, 7, 55),  "rad":"bks",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"slow northward turning, clear overshielding in bks, check for other radars"},
+              {"datetime": dt.datetime(2016, 2, 16, 9, 50),   "rad":"cvw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"slow northward turning, good data coverage, good flow response in cvw, check for other radars"},
+
+
+              {"datetime": dt.datetime(2016, 2, 23, 6, 15),   "rad":"bks",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"nice northward turning, but no flow response"},
+
+              {"datetime": dt.datetime(2015, 11, 17, 8, 0),   "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"nice southward turning, clear undershielding response in fhw data, not enough coverage from other radars"},
+              {"datetime": dt.datetime(2015, 11, 18, 13, 50), "rad":"ade",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"east",   "event_status":None,    "same_lagtime":"yes",  "comment":"nice southward turning, clear undershielding response in ade, adw data"},
+              {"datetime": dt.datetime(2015, 11, 18, 13, 50), "rad":"adw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"nice southward turning, clear undershielding response in ade, adw data"},
+              {"datetime": dt.datetime(2015, 11, 29, 8, 40),  "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"strong southward turning, clear undershielding response in bks, fhe, fhw. check for other radars"},
+              {"datetime": dt.datetime(2015, 12, 2, 8, 5),    "rad":"bks",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"strong southward turning, clear undershielding response in bks, cvw, cve, fhe, fhw. check for other radars"},
+              {"datetime": dt.datetime(2015, 12, 5, 15, 0),   "rad":"ade",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"clear undershielding response in ade, adw. check for other radars"},
+              {"datetime": dt.datetime(2015, 12, 7, 7, 40),   "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"Short lived, clear undershielding in several radars"},
+              {"datetime": dt.datetime(2015, 12, 28, 9, 5),   "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"clear undershielding in fhw, check for other radars"},
+              {"datetime": dt.datetime(2016, 1, 10, 13, 50),  "rad":"adw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"undershielding reponse in ade, adw"},
+              {"datetime": dt.datetime(2016, 1, 17, 11, 5),   "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"very nice southward turning, undershielding reponse in fhw, check for other radars"},
+              {"datetime": dt.datetime(2016, 1, 23, 7, 40),   "rad":"bks",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"undershielding reponse in bks, check for other radars"},
+              {"datetime": dt.datetime(2016, 2, 2, 14, 0),    "rad":"adw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"weak undershielding reponse in adw"},
+              {"datetime": dt.datetime(2016, 2, 21, 4, 0),    "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"weak reponse in fhe, fhw, cvw. check for other radars"},
+
+              {"datetime": dt.datetime(2016, 1, 17, 11, 5),   "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"nice southward turning, no flow response"},
+              {"datetime": dt.datetime(2016, 2, 13, 5, 30),   "rad":"bks",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"southward turning, no flow response"},
+
+              
+
 
     data_dict = {}
     keys = events[0].keys()
