@@ -55,7 +55,7 @@ def plot_imf(event_dtm, ax_imf=None, ax_theta=None,
 
 
 def plot_rti(ax, event_dtm, rad,
-             bmnum=7, mag_bmazm=None,
+             bmnum=7, lag_time=None, mag_bmazm=None,
              stable_interval=30, ftype="fitacf",
              mag_latc_range=[53, 65], vel_maxlim=500,
              cmap="jet", norm=None, scatter_plot=True,
@@ -71,14 +71,15 @@ def plot_rti(ax, event_dtm, rad,
 
     """
 
-    # Create event list
-    df_turn = create_event_list(IMF_turning=IMF_turning)
-    df_turn = df_turn.loc[df_turn.datetime==event_dtm, :]
+    if lag_time is None:
+	# Create event list
+	df_turn = create_event_list(IMF_turning=IMF_turning)
+	df_turn = df_turn.loc[df_turn.datetime==event_dtm, :]
 
-    # Find the convection respond time
-    lag_time = df_turn.lag_time.iloc[0]
+	# Find the convection respond time
+	lag_time = df_turn.lag_time.iloc[0]
+
     event_dtm = event_dtm + dt.timedelta(seconds=60. * lag_time)
-
     # Construct stm and etm
     stm = event_dtm - dt.timedelta(seconds=60. * stable_interval)
     etm = event_dtm + dt.timedelta(seconds=60. * stable_interval)
@@ -101,10 +102,10 @@ def plot_rti(ax, event_dtm, rad,
     ccoll = None
     if bmnum is not None:
         # load data to a dataframe
-        command = "SELECT vel, mag_latc, rad_mlt, bmnum, nrang, rsep, slist, datetime " +\
+        command = "SELECT vel, mag_latc, rad_mlt, bmnum, frang, nrang, rsep, slist, datetime " +\
                   "FROM {tb} " + \
                   "WHERE datetime BETWEEN '{stm}' AND '{etm}' "+\
-                  "AND bmnum={bmnum}"
+                  "AND bmnum={bmnum} ORDER BY datetime"
         command = command.format(tb=rad, stm=stm, etm=etm, bmnum=bmnum)
         df = pd.read_sql(command, conn)
 
@@ -119,12 +120,13 @@ def plot_rti(ax, event_dtm, rad,
                 rmax = df.nrang.max()
                 fov_dtm = pd.to_datetime(df.datetime.tolist()[0])
                 rsep = df.rsep.unique().tolist()[0]
+                frang = df.frang.unique().tolist()[0]
                 site = pydarn.radar.network().getRadarByCode(rad) \
                        .getSiteByDate(fov_dtm)
                 myFov = pydarn.radar.radFov.fov(site=site, ngates=rmax,
                                                 nbeams=site.maxbeam,
-                                                rsep=rsep, coords="mag",
-                                                date_time=fov_dtm)
+                                                rsep=rsep, frang=frang, coords="mag",
+                                                coord_alt=300., date_time=fov_dtm)
                 ys = myFov.latFull[bmnum]
                 cs = np.ones((len(xs), len(ys))) * np.nan
 
@@ -171,6 +173,20 @@ def plot_rti(ax, event_dtm, rad,
 		else:
 		    # Build a list of datetimes to plot each data point at.
 		    xs[tcnt] = relative_time
+#		    if(i < len(df) - 1): 
+#                        dtm_tmp_next = pd.to_datetime(df.iloc[i+1, :].datetime)
+#                        relative_time_next = (dtm_tmp_next-event_dtm).total_seconds()/60.
+#                        if(relative_time_next - xs[tcnt] > 4.):
+#                            tcnt += 1
+#		            # hardcoded 1 minute step per data point
+#		            # but only if time between data points is > 4 minutes
+#		            xs[tcnt] = xs[tcnt - 1] + 1.
+#                    for j in range(len(slst)):
+#                        cs[tcnt][slst[j]] = vl[j]
+#		    tcnt += 1
+
+                    for j in range(len(slst)):
+                        cs[tcnt][slst[j]] = vl[j]
 		    if(i < len(df) - 1): 
                         dtm_tmp_next = pd.to_datetime(df.iloc[i+1, :].datetime)
                         relative_time_next = (dtm_tmp_next-event_dtm).total_seconds()/60.
@@ -180,8 +196,7 @@ def plot_rti(ax, event_dtm, rad,
 		            # but only if time between data points is > 4 minutes
 		            xs[tcnt] = xs[tcnt - 1] + 1.
 		    tcnt += 1
-                    for j in range(len(slst)):
-                        cs[tcnt][slst[j]] = vl[j]
+
 
             # Plot the data
             if scatter_plot:
@@ -201,8 +216,8 @@ def plot_rti(ax, event_dtm, rad,
                 ccoll = ax.pcolormesh(X, Y, Z, edgecolor=None, cmap=cmap, norm=norm)
 
             # Annotate the starting MLT location of the radar
-            rad_mlt_loc = round(df.rad_mlt.as_matrix()[0]/15.,1)
-            lbl = rad + ",b" + str(bmnum) + "\nMLT=" + str(rad_mlt_loc)
+            rad_mlt_loc = round(df.rad_mlt.as_matrix()[0]/15. + stable_interval/60.,1) % 24
+            lbl = rad + ",b" + str(bmnum) + "\nMLT=" + str(rad_mlt_loc) + "\nlag=" + str(lag_time) + "min"
             ax.annotate(lbl, xy=(0.90, 0.1), xycoords="axes fraction", fontsize=8)
     ax.set_ylabel("MLAT", fontsize=8)
     ax.set_ylim([mag_latc_range[0], mag_latc_range[1]])
@@ -219,88 +234,164 @@ if __name__ == "__main__":
     from matplotlib.colors import BoundaryNorm, Normalize
 
     stable_interval=30
+    mag_latc_range=[53, 65]
+    #IMF_turning = "southward"
+    imf_ylim = [-12, 12]
     IMF_turning = "southward"
-    imf_ylim = [-10, 10]
-    #IMF_turning = "northward"
+    IMF_events = True
     scatter_plot = False
     cmap="jet_r"
     norm = Normalize(vmin=-100,vmax=100)
 
-    #event_dtm = dt.datetime(2014, 12, 16, 14, 2)
-    #event_dtm = dt.datetime(2013, 2, 21, 5, 34)
-    event_dtm = dt.datetime(2015, 3, 29, 9, 49)
 
-    #rads = ["wal", "bks", "fhe", "fhw", "cve", "cvw", "ade", "adw"]
-    #rads = ["wal", "bks", "fhe", "fhw"]
-    rads = ["cve", "cvw", "ade", "adw"] 
-    #rads = ["fhe", "fhw"]
-    #rads = ["cve", "cvw"]
-    #rads = ["cve", "ade"]
+    df_turn = create_event_list(IMF_events=IMF_events, IMF_turning=IMF_turning)
+    # Run for all events
+    #event_dtms = [x.to_pydatetime() for x in df_turn.datetime]
+	
 
-    #bmnums = range(0, 15, 2)
-    #bmnums = range(1, 16, 2)
-    #bmnums = range(0, 24, 3)
-    bmnums = [1, 7, 13, 19]
-    fig, axes = plt.subplots(nrows=len(bmnums)*len(rads), ncols=1, figsize=(6,12),
-                             sharex=True)
+    # Plot different radars for a single event
+    #rads_list = [["wal", "bks", "fhe", "fhw"], ["cve", "cvw", "ade", "adw"]]
 
-    # Plot LOS velocity 
-    mappable = None
-    for k, rad in enumerate(rads):
-        for i, bmnum in enumerate(bmnums):
-            ax = axes[(len(bmnums))*k+i]
-            losvel_mappable = plot_rti(ax, event_dtm, rad,
-                                       bmnum=bmnum, mag_bmazm=None,
-                                       stable_interval=stable_interval,
-                                       ftype="fitacf", mag_latc_range=[53, 65],
-                                       cmap=cmap, norm=norm, scatter_plot=scatter_plot,
-                                       IMF_turning=IMF_turning, db_name = None,
-                                       dbdir = "../data/sqlite3/")
-            if losvel_mappable:
-                mappable = losvel_mappable
-    axes[0].set_title(event_dtm.strftime("%m/%d/%Y  %H:%M"))
-    axes[-1].set_xlabel("Time [min]")
+    # Run for a single event
+    #event_dtms = [dt.datetime(2013, 2, 21, 5, 34)]
+    #rads_list = [["bks", "fhe", "fhw", "cve", "cvw"]]
+    #bmnums_list = [[[19], [7], [13], [7], [13]]]
 
-    # Add colorbar for LOS Vel.
-    if mappable:
-        fig.subplots_adjust(right=0.8)
-        cbar_ax = fig.add_axes([0.85, 0.30, 0.03, 0.4])
-        #fig.colorbar(im, cax=cbar_ax)
-        add_cbar(fig, mappable, label="Velocity [m/s]", cax=cbar_ax,
-                 ax=None, title_size=10, ytick_label_size=10)
+    #event_dtms = [dt.datetime(2013, 11, 16, 7, 49)]
+    #IMF_turning = "northward"
+    #rads_list = [["cvw", "cve", "fhw", "fhe", "bks"]]
+    #bmnums_list = [[[13, 19], [0], [13], [7], [13]]]
+    #lag_time=10
 
-##############################
-    from superpose_single_event_losvel import plot_imf, plot_aualae
+    #event_dtms = [dt.datetime(2013, 11, 16, 7, 24)]
+    #IMF_turning = "southward"
+    #rads_list = [["adw", "cvw", "cve", "fhw", "fhe", "bks"]]
+    #bmnums_list = [[[10], [13], [0], [13], [11], [13]]]
+    #lag_time=15
 
-    fig2, axes = plt.subplots(nrows=2, ncols=1, figsize=(6,8),
-                             sharex=True)
-    ax_imf, ax_ae = axes
-    ax_theta = None
-    # Plot IMF
-    plot_imf(event_dtm, ax_imf=ax_imf, ax_theta=ax_theta,
-             stable_interval=stable_interval, ylim=imf_ylim,
-             dbdir="../data/sqlite3/", db_name="gmi_imf.sqlite",
-             table_name="IMF")
+    #event_dtms = [dt.datetime(2015, 2, 8, 8, 05)]
+    #IMF_turning = "northward"
+    #rads_list = [["adw", "cvw", "cve", "fhe", "bks"]]
+    #bmnums_list = [[[13], [13], [7], [13], [13]]]
+    #lag_time=15
 
-    # Plot AU, AL
-    plot_aualae(event_dtm, ax_ae, plot_ae=True,
-                stable_interval=stable_interval, ylim_au=[0, 500],
-                ylim_al=[-500, 0], ylabel_fontsize=9,
-                marker='.', linestyle='--')
+    #event_dtms = [dt.datetime(2013, 5, 19, 5, 17)]
+    #IMF_turning = "southhward"
+    #rads_list = [["cvw", "cve", "fhw", "fhe", "bks"]]
+    #bmnums_list = [[[13], [7], [10], [7], [13]]]
+    #lag_time=15
 
-    ax_imf.set_title(event_dtm.strftime("%m/%d/%Y  %H:%M"))
-##############################
+    #IMF_turning = "northward"
+    #event_dtms = [dt.datetime(2015, 10, 18, 5, 38)]   # Done
+    #event_dtms = [dt.datetime(2015, 11, 16, 6, 4)]    # Response not clear
+    #event_dtms = [dt.datetime(2015, 12, 3, 14, 14)]   # not tested
+    #event_dtms = [dt.datetime(2015, 12, 7, 7, 58)]    # not tested
+    #event_dtms = [dt.datetime(2015, 12, 22, 11, 36)]  # Need rethinking 
+    #event_dtms = [dt.datetime(2014, 11, 21, 9, 43)]   # Done
+    #event_dtms = [dt.datetime(2014, 12, 7, 10, 40)]   # Done
+    #event_dtms = [dt.datetime(2014, 2, 8, 7, 50)]     # Done
+    #event_dtms = [dt.datetime(2013, 11, 11, 14, 13)]  # Response not clear
+    #event_dtms = [dt.datetime(2012, 11, 20, 8, 46)]   # Needs a relook
+    #event_dtms = [dt.datetime(2013, 2, 8, 3, 53)]     # Done
+    #event_dtms = [dt.datetime(2014, 11, 20, 6, 35)]
+    #event_dtms = [dt.datetime(2013, 2, 7, 14, 24)]
+    #event_dtms = [dt.datetime(2013, 2, 20, 3, 45)]
 
-    #plt.show()
-    fig_dir = "../plots/rti_stackplot/"
-    if scatter_plot:
-        fig_name = "scatter_losvel_" + event_dtm.strftime("%Y%m%d.%H%M_") + IMF_turning + "_" + "_".join(rads)
-    else:
-        fig_name = "losvel_" + event_dtm.strftime("%Y%m%d.%H%M_") + IMF_turning + "_" + "_".join(rads)
-    fig2_name = "imf_aual_" + event_dtm.strftime("%Y%m%d.%H%M_") + IMF_turning
-    #fig.savefig("/home/muhammad/Dropbox/tmp/fig1.png", dpi=200, bbox_inches="tight")
-    #fig2.savefig("/home/muhammad/Dropbox/tmp/fig2.png",dpi=200,  bbox_inches="tight")
-    fig.savefig(fig_dir + fig_name + ".png", dpi=200, bbox_inches="tight")
-    fig2.savefig(fig_dir + fig2_name + ".png", dpi=200,  bbox_inches="tight")
-    plt.close(fig)
-    plt.close(fig2)
+    IMF_turning = "southward"
+    #event_dtms = [dt.datetime(2013, 2, 21, 4, 3)]     # Done
+    #event_dtms = [dt.datetime(2013, 11, 16, 7, 24)]   # Done 
+    #event_dtms = [dt.datetime(2013, 11, 16, 8, 51)]   # Done
+    #event_dtms = [dt.datetime(2013, 5, 14, 6, 40)]    # Done
+    event_dtms = [dt.datetime(2014, 2, 28, 7, 26)]     
+    #event_dtms = [dt.datetime(2015, 3, 28, 5, 2)]     
+    #event_dtms = [dt.datetime(2015, 3, 29, 9, 49)]     
+    rads_list = [["adw", "ade", "cvw", "cve"], ["fhw", "fhe", "bks", "wal"]]
+    bmnums_lst = [[[1, 13, 17, 21], [1, 7, 11, 21],  [1, 13, 17, 23], [1, 7, 11, 23]],
+                  [[1, 13, 17, 21], [1, 7, 11, 21],  [1, 13, 17, 23], [1, 7, 11, 19]]]
+#    rads_list = [["adw"], ["ade"], ["cvw"], ["cve"], ["fhw"], ["fhe"], ["bks"], ["wal"]]
+#    bmnums_lst = [[range(9, 21, 1)], [range(0, 12, 1)],  [range(9, 21, 1)], [range(0, 12, 1)],
+#                  [range(9, 21, 1)], [range(0, 12, 1)],  [range(9, 21, 1)], [range(0, 12, 1)]]
+
+    #rads_list = [["cvw"]]
+    #bmnums_lst = [[range(1, 20, 2)]]
+    #bmnums_lst = [[range(0, 12, 1)]]
+    #bmnums_lst = [[range(9, 21, 1)]]
+
+    lag_time=10
+
+    for event_dtm in event_dtms:
+        for b, rads in enumerate(rads_list):
+            ax_idx = 0
+            bmnums_list = bmnums_lst[b]
+            nrows = np.sum([len(x) for x in bmnums_list])
+            #nrows = 5
+            fig, axes = plt.subplots(nrows=nrows, ncols=1, figsize=(6,12),
+                                     sharex=True)
+
+            # Plot LOS velocity 
+            mappable = None
+            for k, rad in enumerate(rads):
+                bmnums = bmnums_list[k]
+                for i, bmnum in enumerate(bmnums):
+                    #ax = axes[(len(bmnums))*k+i]
+                    ax = axes[ax_idx]
+                    losvel_mappable = plot_rti(ax, event_dtm, rad,
+                                               bmnum=bmnum, lag_time=lag_time, mag_bmazm=None,
+                                               stable_interval=stable_interval,
+                                               ftype="fitacf", mag_latc_range=mag_latc_range,
+                                               cmap=cmap, norm=norm, scatter_plot=scatter_plot,
+                                               IMF_turning=IMF_turning, db_name = None,
+                                               dbdir = "../data/sqlite3/")
+                    ax_idx = ax_idx + 1
+                    if losvel_mappable:
+                        mappable = losvel_mappable
+            axes[0].set_title(event_dtm.strftime("%m/%d/%Y  %H:%M"))
+            axes[-1].set_xlabel("Time [min]")
+
+            # Add colorbar for LOS Vel.
+            if mappable:
+                fig.subplots_adjust(right=0.8)
+                cbar_ax = fig.add_axes([0.85, 0.30, 0.03, 0.4])
+                #fig.colorbar(im, cax=cbar_ax)
+                add_cbar(fig, mappable, label="Velocity [m/s]", cax=cbar_ax,
+                         ax=None, title_size=10, ytick_label_size=10)
+
+        ##############################
+            from superpose_single_event_losvel import plot_imf, plot_aualae
+
+            fig2, axes = plt.subplots(nrows=2, ncols=1, figsize=(6,8),
+                                     sharex=True)
+            ax_imf, ax_ae = axes
+            ax_theta = None
+            # Plot IMF
+            plot_imf(event_dtm, ax_imf=ax_imf, ax_theta=ax_theta,
+                     stable_interval=stable_interval, ylim=imf_ylim,
+                     dbdir="../data/sqlite3/", db_name="gmi_imf.sqlite",
+                     table_name="IMF")
+
+            # Plot AU, AL
+            plot_aualae(event_dtm, ax_ae, plot_ae=True, lag_time=lag_time,
+                        stable_interval=stable_interval, ylim_au=[0, 600],
+                        ylim_al=[-500, 0], ylabel_fontsize=9,
+                        marker='.', linestyle='--')
+
+            ax_imf.set_title(event_dtm.strftime("%m/%d/%Y  %H:%M"))
+        ##############################
+
+            #plt.show()
+            fig_dir = "/home/muhammad/Dropbox/tmp/tmp/"
+            #fig_dir = "../plots/rti_stackplot/" + IMF_turning + "/"
+            #fig_dir = "../plots/rti_stackplot/single_event_per_fig/"
+            if scatter_plot:
+                fig_name = "scatter_losvel_" + event_dtm.strftime("%Y%m%d.%H%M_") + IMF_turning + "_" + "_".join(rads)
+            else:
+                fig_name = "losvel_" + event_dtm.strftime("%Y%m%d.%H%M_") + IMF_turning + "_" + "_".join(rads)
+            fig2_name = "imf_aual_" + event_dtm.strftime("%Y%m%d.%H%M_") + IMF_turning
+            #fig.savefig("/home/muhammad/Dropbox/tmp/fig1.png", dpi=200, bbox_inches="tight")
+            #fig2.savefig("/home/muhammad/Dropbox/tmp/fig2.png",dpi=200,  bbox_inches="tight")
+            fig.savefig(fig_dir + fig_name + ".png", dpi=200, bbox_inches="tight")
+            fig2.savefig(fig_dir + fig2_name + ".png", dpi=200,  bbox_inches="tight")
+            plt.close(fig)
+            plt.close(fig2)
+
+
