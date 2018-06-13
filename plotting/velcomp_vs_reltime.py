@@ -250,7 +250,7 @@ if __name__ == "__main__":
                    "_res_" + str(reltime_resolution) + "min"
 
     reltime_range=[-20, 20]
-    mlt_ranges=[[-3.4, -2.6], [-0,4, 0.4], [3.6, 4.4]]
+    mlt_ranges=[[-3.4, -2.6], [-0,4, 0.4], [2.6, 3.4]]
     ylim_list = [[-200, 200], [-100, 100], [-100, 100]]
     veldir_list = ["zonal", "meridional", "zonal"]
     add_err_bar = False
@@ -291,7 +291,13 @@ if __name__ == "__main__":
 
     # save the fig
     fig_dir = "/home/muhammad/Dropbox/tmp/tmp/"
-    fig_name = "line_plot"
+    #fig_name = "line_plot"
+    fig_name = "line_plot_lat" + str(lat_range[0]) +\
+               "_to_lat" + str(lat_range[1]) +\
+               "_mltwidth_" + str(int(mlt_width)) +\
+               "_res_" + str(reltime_resolution) + "min" + \
+               "_nvel_min_" + str(nvel_min) + "velmag_err_"  + str(vel_mag_err_maxlim)
+
     fig.savefig(fig_dir + fig_name + ".png", dpi=300, bbox_inches="tight")
     #plt.show()
 
