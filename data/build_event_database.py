@@ -100,6 +100,30 @@ def build_event_database(IMF_turning="northward", event_status="good",
               {"datetime": dt.datetime(2015, 6, 30, 5,  43),  "rad":"cvw",  "bmnum":11,  "lag_time":18,  "turn_flag":0,    "mlt":21,   "bmdir":"west",   "event_status":"good",  "same_lagtime":"no",   "comment":"a bit slow but clean northward turning, ok data coverage, clear flow response but ground scatter dominates at MLAT > 57"},
               {"datetime": dt.datetime(2015, 6, 30, 5,  43),  "rad":"cve",  "bmnum":8,   "lag_time":18,  "turn_flag":0,    "mlt":21,   "bmdir":"east",   "event_status":"good",  "same_lagtime":"no",   "comment":"ok data coverage, clear flow response but ground scatter dominates at MLAT > 58, scatter after turning could also from ground"},
               {"datetime": dt.datetime(2015, 6, 30, 5,  43),  "rad":"fhe",  "bmnum":7,   "lag_time":18,  "turn_flag":0,    "mlt":23,   "bmdir":"east",   "event_status":"good",  "same_lagtime":"no",   "comment":"ok data coverage, clear flow response"},
+              {"datetime": dt.datetime(2014, 11, 20, 6, 37),  "rad":"cvw",  "bmnum":15,  "lag_time":18,  "turn_flag":0,    "mlt":23,   "bmdir":"west",   "event_status":"good",  "same_lagtime":"no",   "comment":"relatively slow northward turning, ok data coverage, ok flow response but the lag time is much larger"},
+              {"datetime": dt.datetime(2014, 11, 20, 6, 37),  "rad":"cve",  "bmnum":7,   "lag_time":18,  "turn_flag":0,    "mlt":23,   "bmdir":"east",   "event_status":"good",  "same_lagtime":"no",   "comment":"good data coverage, ok flow response"},
+              {"datetime": dt.datetime(2014, 11, 20, 6, 37),  "rad":"fhe",  "bmnum":2,   "lag_time":18,  "turn_flag":0,    "mlt":0,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"no",   "comment":"good data coverage, clear flow response"},
+              {"datetime": dt.datetime(2014, 11, 20, 6, 37),  "rad":"fhw",  "bmnum":13,  "lag_time":18,  "turn_flag":0,    "mlt":23,   "bmdir":"west",   "event_status":"good",  "same_lagtime":"no",   "comment":"ok data coverage, not clear flow response"},
+              {"datetime": dt.datetime(2014, 11, 20, 6, 37),  "rad":"bks",  "bmnum":13,  "lag_time":18,  "turn_flag":0,    "mlt":3,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"no",   "comment":"good data coverage, clear flow response"},
+              {"datetime": dt.datetime(2014, 11, 20, 6, 37),  "rad":"wal",  "bmnum":6,   "lag_time":18,  "turn_flag":0,    "mlt":3,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"no",   "comment":"poor data coverage, opposite flow response"},
+              {"datetime": dt.datetime(2015, 11, 16, 6, 4),   "rad":"cvw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":21    "bmdir":"west",   "event_status":"good",  "same_lagtime":"no",   "comment":"relatively good northward turning, good data coverage, not sure about flow response due to data gap"},
+              {"datetime": dt.datetime(2015, 11, 16, 6, 4),   "rad":"cve",  "bmnum":7,   "lag_time":10,  "turn_flag":0,    "mlt":21    "bmdir":"east",   "event_status":"good",  "same_lagtime":"no",   "comment":"good data coverage, not sure about flow response due to data gap"},
+              {"datetime": dt.datetime(2015, 11, 16, 6, 4),   "rad":"fhw",  "bmnum":19,  "lag_time":10,  "turn_flag":0,    "mlt":0,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"no",   "comment":"good data coverage, ok flow response"},
+              {"datetime": dt.datetime(2015, 11, 16, 6, 4),   "rad":"fhe",  "bmnum":0,   "lag_time":10,  "turn_flag":0,    "mlt":0,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"no",   "comment":"ok data coverage, not clear flow response"},
+              {"datetime": dt.datetime(2015, 11, 16, 6, 4),   "rad":"bks",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":1,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"no",   "comment":"good data coverage, clear flow response"},
+              {"datetime": dt.datetime(2015, 2,  8,  8, 5),   "rad":"adw",  "bmnum":13,  "lag_time":20,  "turn_flag":0,    "mlt":19,   "bmdir":"west",   "event_status":"good",  "same_lagtime":"no",   "comment":"good northward turning, ok data coverage, no clear flow response"}]
+              {"datetime": dt.datetime(2015, 2,  8,  8, 5),   "rad":"ade",  "bmnum":7,   "lag_time":20,  "turn_flag":0,    "mlt":19,   "bmdir":"east",   "event_status":"good",  "same_lagtime":"no",   "comment":"poor data coverage, no clear flow response"}]
+              {"datetime": dt.datetime(2015, 2,  8,  8, 5),   "rad":"cvw",  "bmnum":20,  "lag_time":20,  "turn_flag":0,    "mlt":0,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"no",   "comment":"ok data coverage, weak flow response"}]
+              {"datetime": dt.datetime(2015, 2,  8,  8, 5),   "rad":"cve",  "bmnum":0,   "lag_time":20,  "turn_flag":0,    "mlt":0,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"no",   "comment":"good data coverage, weak flow response"}]
+              {"datetime": dt.datetime(2015, 2,  8,  8, 5),   "rad":"fhw",  "bmnum":11,  "lag_time":20,  "turn_flag":0,    "mlt":1,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"no",   "comment":"relatively good data coverage, clear flow response"}]
+              {"datetime": dt.datetime(2015, 2,  8,  8, 5),   "rad":"fhe",  "bmnum":7,   "lag_time":20,  "turn_flag":0,    "mlt":1,    "bmdir":"east",   "event_status":"good",  "same_lagtime":"no",   "comment":"good data coverage, not clear flow response"}]
+              {"datetime": dt.datetime(2015, 2,  8,  8, 5),   "rad":"bks",  "bmnum":13,  "lag_time":20,  "turn_flag":0,    "mlt":3,    "bmdir":"west",   "event_status":"good",  "same_lagtime":"no",   "comment":"very good data coverage, no clear flow response"}]
+              {"datetime": dt.datetime(2013, 2,  20, 3, 45),  "rad":"cvw",  "bmnum":13,  "lag_time":22,  "turn_flag":0,    "mlt":19,   "bmdir":"west",   "event_status":"good",  "same_lagtime":"no",   "comment":"good northward turning, good data coverage, clear flow response but could be dominated by ground scatter after turning"},
+              {"datetime": dt.datetime(2013, 2,  20, 3, 45),  "rad":"cve",  "bmnum":7,   "lag_time":22,  "turn_flag":0,    "mlt":19,   "bmdir":"east",   "event_status":"good",  "same_lagtime":"no",   "comment":"good data coverage, clear flow response but could be dominated by ground scatter after turning"},
+              {"datetime": dt.datetime(2013, 2,  20, 3, 45),  "rad":"fhw",  "bmnum":13,  "lag_time":22,  "turn_flag":0,    "mlt":21,   "bmdir":"west",   "event_status":"good",  "same_lagtime":"no",   "comment":"poor data coverage"},
+              {"datetime": dt.datetime(2013, 2,  20, 3, 45),  "rad":"fhe",  "bmnum":7,   "lag_time":22,  "turn_flag":0,    "mlt":21,   "bmdir":"east",   "event_status":"good",  "same_lagtime":"no",   "comment":"relatively ok data coverage, weak flow response"},
+              {"datetime": dt.datetime(2013, 2,  20, 3, 45),  "rad":"bks",  "bmnum":16,  "lag_time":22,  "turn_flag":0,    "mlt":23,   "bmdir":"west",   "event_status":"good",  "same_lagtime":"no",   "comment":"relatively ok data coverage, ok flow response"},
+              {"datetime": dt.datetime(2013, 2,  20, 3, 45),  "rad":"wal",  "bmnum":7,   "lag_time":22,  "turn_flag":0,    "mlt":23,   "bmdir":"east",   "event_status":"good",  "same_lagtime":"no",   "comment":"good data coverage, clear flow response"},
               {"datetime": dt.datetime(2015, 12, 3, 14, 14),  "rad":"adw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"not a good turning, clear overshielding response in adw data, check for other radars"},
               {"datetime": dt.datetime(2015, 12, 22, 11, 36), "rad":"cvw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"clear overshielding in cvw, check for other radars"},
               {"datetime": dt.datetime(2013, 11, 11, 14, 13), "rad":"cvw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"northward turning with a small jump, good data coverage, no clear flow response"},
@@ -114,23 +138,16 @@ def build_event_database(IMF_turning="northward", event_status="good",
               {"datetime": dt.datetime(2015, 12, 5, 14, 50),  "rad":"adw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"short lived, clear overshielding response in ade, adw. check for other radars"},
               {"datetime": dt.datetime(2015, 12, 7, 7, 58),   "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"Short lived, very clear overshielding in several radars"}]
 
-                      (dt.datetime(2015, 3, 16, 6, 49),  0,   7,   "yes",  ["wal", "bks", "fhe", "fhw", "cve", "cvw"],  [30, -20, 30, -30, 30, -30]),   # NOTE: Good
-                      (dt.datetime(2015, 3, 28, 7, 46),  0,   10,  "yes"),   # NOTE: Good one but disturbed time. NEEDS SPECIAL STUDY
-                      (dt.datetime(2015, 4, 10, 8, 39),  0,   10,  "yes",  ["wal", "bks", "cve"],  [30, -30, 5]), # NOTE: Good one but disturbed time. NEEDS SPECIAL STUDY
-                      (dt.datetime(2015, 5, 19, 2, 32),  0,   10,  "yes",  ["wal", "bks"],  [30, -30]),   # NOTE: Good one but disturbed time. NEEDS SPECIAL STUDY. BKS, WAL (WAL is a good example for oversheilding in the premidnight sector
-                      (dt.datetime(2015, 5, 10, 13, 17), 0,   10,  "yes",  ["ade", "adw"],  [30, -30]),   # ADW, ADE (los vel direction is the opposite to what is expected
-                      (dt.datetime(2015, 7, 28, 12, 38), 0,   10,  "yes",  ["ade", "adw"],  [30, -30]),   # Lag time does not make sense
+#                      (dt.datetime(2015, 3, 16, 6, 49),  0,   7,   "yes",  ["wal", "bks", "fhe", "fhw", "cve", "cvw"],  [30, -20, 30, -30, 30, -30]),   # NOTE: Good
+#                      (dt.datetime(2015, 3, 28, 7, 46),  0,   10,  "yes"),   # NOTE: Good one but disturbed time. NEEDS SPECIAL STUDY
+#                      (dt.datetime(2015, 4, 10, 8, 39),  0,   10,  "yes",  ["wal", "bks", "cve"],  [30, -30, 5]), # NOTE: Good one but disturbed time. NEEDS SPECIAL STUDY
+#                      (dt.datetime(2015, 5, 19, 2, 32),  0,   10,  "yes",  ["wal", "bks"],  [30, -30]),   # NOTE: Good one but disturbed time. NEEDS SPECIAL STUDY. BKS, WAL (WAL is a good example for oversheilding in the premidnight sector
+#                      (dt.datetime(2015, 5, 10, 13, 17), 0,   10,  "yes",  ["ade", "adw"],  [30, -30]),   # ADW, ADE (los vel direction is the opposite to what is expected
+#                      (dt.datetime(2015, 7, 28, 12, 38), 0,   10,  "yes",  ["ade", "adw"],  [30, -30]),   # Lag time does not make sense
 
 
               # Northward turning but no flow response
-    events = events + [\
-              {"datetime": dt.datetime(2015, 11, 16, 6, 4),   "rad":"bks",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"not clear response, good data coverage"},
-              {"datetime": dt.datetime(2014, 11, 20, 6, 35),  "rad":"bks",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"northward turning, but no flow response, check for other radars"},
-              {"datetime": dt.datetime(2013, 11, 8, 6, 3),    "rad":"cvw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"northward turning, but no flow response, check for other radars"},
-              {"datetime": dt.datetime(2013, 2, 7, 14, 24),   "rad":"adw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"northward turning, but no flow response, check for other radars"},
-              {"datetime": dt.datetime(2013, 2, 20, 3, 45),   "rad":"cvw",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"northward turning, but no flow response, check for other radars"}]
-              {"datetime": dt.datetime(2015, 2, 8, 8, 5),     "rad":"bks",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"Very nice northward turning, very good radar coverage, but no clear flow response"}]
-              #{"datetime": dt.datetime(2016, 2, 23, 6, 15),   "rad":"bks",  "bmnum":13,  "lag_time":10,  "turn_flag":0,    "mlt":None, "bmdir":"west",   "event_status":None,    "same_lagtime":"yes",  "comment":"nice northward turning, but no flow response"},
+    #events = events + [\
 
               # Southward turning
     events = events + [\
@@ -245,28 +262,34 @@ def build_event_database(IMF_turning="northward", event_status="good",
               {"datetime": dt.datetime(2015, 1, 3, 10, 17),   "rad":"cve",  "bmnum":10,  "lag_time":18,  "turn_flag":180,  "mlt":3,    "bmdir":"east",   "event_status":"bad",     "same_lagtime":"no",   "comment":"ok data coverage but ground scatter below MLAT < 60, clear flow response"},
               {"datetime": dt.datetime(2015, 1, 3, 10, 17),   "rad":"fhe",  "bmnum":10,  "lag_time":18,  "turn_flag":180,  "mlt":5,    "bmdir":"east",   "event_status":"good",    "same_lagtime":"no",   "comment":"poor data coverage, ok flow response"},
               {"datetime": dt.datetime(2015, 1, 3, 10, 17),   "rad":"bks",  "bmnum":13,  "lag_time":18,  "turn_flag":180,  "mlt":5,    "bmdir":"west",   "event_status":"good",    "same_lagtime":"no",   "comment":"ok data coverage, clear flow response"},
-              {"datetime": dt.datetime(2016, 2, 21, 4, 2),    "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,      "same_lagtime":"yes",  "comment":"relatively slow and weak southward turning, weak reponse in fhe, fhw, cvw. check for other radars"},
+              {"datetime": dt.datetime(2014, 3, 25, 9, 7),    "rad":"ade",  "bmnum":11,  "lag_time":20,  "turn_flag":180,  "mlt":21,   "bmdir":"east",   "event_status":"good",    "same_lagtime":"no",   "comment":"nice and clean southward turning, ok data coverage, ok flow response"},
+              {"datetime": dt.datetime(2014, 3, 25, 9, 7),    "rad":"cvw",  "bmnum":20,  "lag_time":20,  "turn_flag":180,  "mlt":0,    "bmdir":"west",   "event_status":"good",    "same_lagtime":"no",   "comment":"good data coverage, ok flow response but hard to locate the lag time"},
+              {"datetime": dt.datetime(2014, 3, 25, 9, 7),    "rad":"cve",  "bmnum":0,   "lag_time":20,  "turn_flag":180,  "mlt":0,    "bmdir":"east",   "event_status":"good",    "same_lagtime":"no",   "comment":"good data coverage, relatively clear flow response but hard to locate the lag time"},
+              {"datetime": dt.datetime(2014, 3, 25, 9, 7),    "rad":"fhw",  "bmnum":13,  "lag_time":20,  "turn_flag":180,  "mlt":3,    "bmdir":"west",   "event_status":"good",    "same_lagtime":"no",   "comment":"poor data coverage, not clear flow response"},
+              {"datetime": dt.datetime(2015, 6, 26, 7, 43),   "rad":"cvw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":0,    "bmdir":"west",   "event_status":"good",    "same_lagtime":"no",   "comment":"relatively slow and weak southward turning, good data coverage, clear flow response but at a very different lag time"},
+              {"datetime": dt.datetime(2015, 6, 26, 7, 43),   "rad":"cve",  "bmnum":0,   "lag_time":10,  "turn_flag":180,  "mlt":0,    "bmdir":"east",   "event_status":"good",    "same_lagtime":"no",   "comment":"ok data coverage but lack of data after turning, not clear flow response"},
+              {"datetime": dt.datetime(2015, 6, 26, 7, 43),   "rad":"fhe",  "bmnum":8,   "lag_time":10,  "turn_flag":180,  "mlt":1,    "bmdir":"east",   "event_status":"good",    "same_lagtime":"no",   "comment":"ok data coverage but less data after turning, not clear flow response"},
+              {"datetime": dt.datetime(2015, 6, 26, 7, 43),   "rad":"bks",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":3,    "bmdir":"west",   "event_status":"good",    "same_lagtime":"no",   "comment":"good data coverage, clear flow response"},
+              {"datetime": dt.datetime(2015, 8, 23, 6, 6),    "rad":"cve",  "bmnum":7,   "lag_time":18,  "turn_flag":180,  "mlt":21,   "bmdir":"east",   "event_status":"good",    "same_lagtime":"no",   "comment":"nice and relatively strong southward turning, good data coverage, clear flow response"},
+              {"datetime": dt.datetime(2015, 8, 23, 6, 6),    "rad":"fhw",  "bmnum":9,   "lag_time":18,  "turn_flag":180,  "mlt":23,   "bmdir":"west",   "event_status":"good",    "same_lagtime":"no",   "comment":"relatively good data coverage, relatively ok flow response"},
               {"datetime": dt.datetime(2014, 12, 7, 10, 5),   "rad":"cvw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,      "same_lagtime":"yes",  "comment":"slow southward turning, good reponse in cvw. check for other radars"},
               {"datetime": dt.datetime(2014, 2, 28, 7, 26),   "rad":"bks",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,      "same_lagtime":"yes",  "comment":"seccessive two southward turnings, good reponse in bks. check for other radars"},
               {"datetime": dt.datetime(2013, 2, 7, 10, 55),   "rad":"cvw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,      "same_lagtime":"yes",  "comment":"seccessive two southward turnings, may not have flow response, check for other radars"},
               {"datetime": dt.datetime(2014, 3, 1, 10, 0),    "rad":"fhw",  "bmnum":7,   "lag_time":22,  "turn_flag":180,  "mlt":1,    "bmdir":"east",   "event_status":None,      "same_lagtime":"yes",  "comment":"small southward turning with oscillation, good reponse in fhw. check for other radars"}, 
               {"datetime": dt.datetime(2015, 10, 5,  4, 57),  "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":19,   "bmdir":"west",   "event_status":None,      "same_lagtime":"yes",  "comment":"slow turning, Response not clear, check for other radars for this turning"},
               {"datetime": dt.datetime(2016, 1, 17, 11, 6),   "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,      "same_lagtime":"yes",  "comment":"ok southward turning, hard to distinguish GS and IS"},
+              {"datetime": dt.datetime(2016, 2, 21, 4, 2),    "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,      "same_lagtime":"yes",  "comment":"relatively slow and weak southward turning, has flow response but ground scatter dominates"},
               {"datetime": dt.datetime(2015, 12, 5, 14, 55),  "rad":"ade",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,      "same_lagtime":"yes",  "comment":"short lived, clear undershielding response in ade, adw. check for other radars"},
               {"datetime": dt.datetime(2015, 12, 7, 7, 40),   "rad":"fhw",  "bmnum":13,  "lag_time":10,  "turn_flag":180,  "mlt":None, "bmdir":"west",   "event_status":None,      "same_lagtime":"yes",  "comment":"Short lived, clear undershielding in several radars"},
               {"datetime": dt.datetime(2015, 2, 23, 5,  36),  "rad":"cvw",  "bmnum":20,  "lag_time":15,  "turn_flag":180,  "mlt":0,    "bmdir":"west",   "event_status":None,      "same_lagtime":"no",   "comment":"very nice southward turning but need to look at fitvel, good data coverage, clear flow response but lag time is much larger than other radars"},
               {"datetime": dt.datetime(2015, 2, 23, 5,  36),  "rad":"fhe",  "bmnum":7,   "lag_time":15,  "turn_flag":180,  "mlt":23,   "bmdir":"east",   "event_status":None,      "same_lagtime":"no",   "comment":"good data coverage, clear but confusing flow response"},
               {"datetime": dt.datetime(2015, 2, 23, 5,  36),  "rad":"bks",  "bmnum":20,  "lag_time":15,  "turn_flag":180,  "mlt":0,    "bmdir":"west",   "event_status":None,      "same_lagtime":"no",   "comment":"good data coverage, clear flow response but lag time is much larger than other radars"}]
 
-                      (dt.datetime(2015, 2, 5, 13, 43),  180, 10,  "yes"),   # Only ADW
-                      (dt.datetime(2015, 2, 23, 8, 17),  180, 10,  "yes"),   # Only BKS
-                      (dt.datetime(2015, 4, 20, 9, 40),  180, 10,  "yes"),
-                      (dt.datetime(2015, 6, 26, 7, 44),  180, 10,  "yes"),
-                      (dt.datetime(2015, 8, 23, 6, 6),   180, 10,  "yes"),
-                      (dt.datetime(2015, 9, 10, 7, 50),  180, 10,  "yes"),
-                      (dt.datetime(2013, 2, 21, 6, 10),  180, 10,  "no"),   # Weak southward turning
-                      (dt.datetime(2013, 5, 19, 5, 17),  180, 10,  "no"),   # Flow response is not clear
-                      (dt.datetime(2014, 3, 25, 9, 7),   180, 10,  "no"),
+#                      (dt.datetime(2015, 2, 5, 13, 46),  180, 10,  "yes"),   # Only ADW
+#                      (dt.datetime(2015, 2, 23, 8, 17),  180, 10,  "yes"),   # Only BKS
+#                      (dt.datetime(2015, 4, 20, 9, 40),  180, 10,  "yes"),   # very slow southward turning
+#                      (dt.datetime(2015, 9, 10, 7, 46),  180, 10,  "yes"),   # Only in ADE, ADW. Dominated by ground scatter before turning. You may ignore this event
+#                      (dt.datetime(2013, 2, 21, 6, 10),  180, 10,  "no"),   # Very good data coverage but weak southward turning
 
 
               # Southward turning but no flow response
@@ -305,7 +328,8 @@ def build_event_database(IMF_turning="northward", event_status="good",
 #
 if __name__ == "__main__":
     #IMF_turning = "all"
-    IMF_turning="northward"
+    #IMF_turning="northward"
+    IMF_turning="southward"
     #event_status="all"
     event_status="good"
     df = build_event_database(IMF_turning=IMF_turning, event_status=event_status)
