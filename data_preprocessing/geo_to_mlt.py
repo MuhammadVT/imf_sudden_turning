@@ -107,7 +107,7 @@ def geo_to_mlt(rad, stm=None, etm=None, ftype="fitacf",
         # pass if the column geo_azmc or mag_azmc exists
         pass
 
-    # add a new column for beam azm angle (in degrees) in mag coords
+    # add new columns for beam azm angle (in degrees) in mag coords and for rad_mlt
     if not stay_in_geo:
         try:
         # add the bmazm angle relative to the magnetic (or geo) pole
@@ -115,6 +115,14 @@ def geo_to_mlt(rad, stm=None, etm=None, ftype="fitacf",
             cur.execute(command)
         except:
             # pass if the column mag_bmazm exists
+            pass
+
+        try:
+        # add the MLT location of a radar
+            command ="ALTER TABLE {tb} ADD COLUMN rad_mlt REAL".format(tb=table_name) 
+            cur.execute(command)
+        except:
+            # pass if the column rad_mlt exists
             pass
 
 
@@ -187,12 +195,21 @@ def geo_to_mlt(rad, stm=None, etm=None, ftype="fitacf",
                     command = command.format(tb=table_name, lonc=lonc,
                                              azm_txt=azm_txt, dtm=date_time)
                 else:
-                    mag_bmazm = geobmazm_to_magbmazm(rad, bmazm, alt=t_c_alt,
+
+                    # Find MLT location of a radar 
+                    rad_lat, rad_lon = rad_loc_dict[rad]
+                    rad_lon, rad_lat = coord_conv(rad_lon, rad_lat, "geo", "mlt",
+                                                  altitude=0.,
+                                                  date_time=date_time)
+                    rad_lon = round(rad_lon % 360,2)
+                    # Convert bmazm from geo to mag
+                    mag_bmazm = geobmazm_to_magbmazm(rad, bmazm, alt=0.,
                                                      time=date_time.date(),
                                                      stay_in_geo=stay_in_geo)
-                    command = "UPDATE {tb} SET mag_bmazm={mag_bmazm}, mag_latc='{latc}', mag_ltc='{lonc}', " +\
+                    command = "UPDATE {tb} SET mag_bmazm={mag_bmazm}, rad_mlt={rad_mlt}, " +\
+                              "mag_latc='{latc}', mag_ltc='{lonc}', " +\
                               "mag_azmc='{azm_txt}' WHERE datetime = '{dtm}'"
-                    command = command.format(tb=table_name, mag_bmazm=mag_bmazm, 
+                    command = command.format(tb=table_name, mag_bmazm=mag_bmazm, rad_mlt=rad_lon,
                                              latc=latc, lonc=lonc, azm_txt=azm_txt,
                                              dtm=date_time)
 

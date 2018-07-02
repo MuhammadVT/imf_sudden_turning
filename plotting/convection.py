@@ -11,7 +11,7 @@ def fetch_data(input_table, lat_range=[52, 59], nvel_min=3, relative_time=-30,
                vel_mag_maxlim=500., vel_mag_err_maxlim=0.2,
                fit_by_bmazm=False, fit_by_losvel_azm=True,
                ftype="fitacf", coords="mlt",
-               dbdir="../data/sqlite3/", db_name=None, sqrt_weighting=False):
+               dbdir="../data/sqlite3/", db_name=None, weighting=None):
 
     """ fetch fitted data from the master db into a dict
 
@@ -47,9 +47,12 @@ def fetch_data(input_table, lat_range=[52, 59], nvel_min=3, relative_time=-30,
     coords : str
         Coordinates in which the binning process took place.
         Default to "mlt, can be "geo" as well.
-    sqrt_weighting : bool
-        if set to False, the fitted vectors that are produced by equality weighting
-        the number of points within each azimuthal bin will be retrieved.
+    weighting : str (Default to None)
+        Type of weighting used for curve fitting
+        if set to None, all azimuthal bins are
+        considered equal regardless of the nubmer of points
+        each of them contains.
+
 
     Return
     ------
@@ -70,10 +73,8 @@ def fetch_data(input_table, lat_range=[52, 59], nvel_min=3, relative_time=-30,
         logging.error(e, exc_info=True)
 
     # set input_table name
-    if sqrt_weighting:
-        input_table = input_table
-    else:
-        input_table = input_table
+    if weighting is not None:
+        input_table = input_table + "_" + weighting + "_weight"
 
     # add new columns
     if coords == "mlt":
@@ -101,7 +102,7 @@ def fetch_data(input_table, lat_range=[52, 59], nvel_min=3, relative_time=-30,
               where_clause +\
               "AND {azmc_span_txt} >= {gazmc_span_minlim} "+\
               "AND vel_count >= {nvel_min} "+\
-              "AND (vel_mag_err/vel_mag) <= {vel_mag_err_maxlim} "+\
+              "AND ABS(vel_mag_err/vel_mag) <= {vel_mag_err_maxlim} "+\
               "AND ABS(vel_mag) <= {vel_mag_maxlim} "+\
               "AND relative_time = {reltime}"
     command = command.format(tb1=input_table, glatc=col_glatc,
@@ -226,7 +227,7 @@ def vector_plot(ax, data_dict, cmap=None, norm=None, velscl=1, lat_min=50, title
     ax.add_collection(lcoll)
 
     # add text
-    ax.set_title(title, fontsize=12)
+    ax.set_title(title, fontsize=8)
     # add latitudinal labels
     fnts = 'small'
     if hemi=="north":
@@ -276,24 +277,25 @@ def main():
     import matplotlib as mpl
 
     # input parameters
-    nvel_min=10
-    lat_range=[53, 63]
+    nvel_min=20
+    lat_range=[54, 60]
     lat_min = 50
-    relative_time=-30
     reltime_resolution=2
-    mlt_width=1.
+    mlt_width=2.
     mlt_range=[-6, 6]
     gazmc_span_minlim=30
-    vel_mag_err_maxlim=0.3
-    vel_mag_maxlim=300.
-    fit_by_bmazm=False
+    vel_mag_err_maxlim=0.1
+    vel_mag_maxlim=200.
+    fit_by_bmazm=False     # Not implemented yet
     fit_by_losvel_azm=True
     ftype = "fitacf"
     coords = "mlt"
-    sqrt_weighting = False
+    #weighting = None 
+    weighting = "std"
     dbdir="../data/sqlite3/"
+    IMF_turning = "southward"
 
-    input_table = "master_cosfit_superposed_mltwidth_" + str(int(mlt_width)) +\
+    input_table = "master_cosfit_superposed_" + IMF_turning + "_mltwidth_" + str(int(mlt_width)) +\
                    "_res_" + str(reltime_resolution) + "min"
 
     # cmap and bounds for color bar
@@ -305,17 +307,23 @@ def main():
     norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
 
 
-    relative_times = [-30, -20, -10, -6, 0, 6, 10, 20, 30]
+    #relative_times = [-30, -20, -10, -6, 0, 6, 10, 20, 30]
+    relative_times = [-20, -10, -6, 0, 10, 20]
 
-    fig_dir = "../plots/convection/"
-    fig_name = "superposed_convection_lat" + str(lat_range[0]) +\
-               "_to_lat" + str(lat_range[1]) + "_nvel_min_" + str(nvel_min) +\
+    #fig_dir = "../plots/convection/"
+    fig_dir = "/home/muhammad/Dropbox/tmp/convection/"
+    fig_name = "3_by_2_superposed_convection_" + IMF_turning + "_lat" + str(lat_range[0]) +\
+               "_to_lat" + str(lat_range[1]) +\
                "_mltwidth_" + str(int(mlt_width)) +\
-               "_res_" + str(reltime_resolution) + "min"
+               "_res_" + str(reltime_resolution) + "min" + \
+               "_nvel_min_" + str(nvel_min) + "velmag_err_"  + str(vel_mag_err_maxlim)
    
     # create subplots
-    fig, axes = plt.subplots(nrows=len(relative_times)/3, ncols=3, figsize=(8,6))
+    #fig, axes = plt.subplots(nrows=len(relative_times)/3, ncols=3, figsize=(8,6))
+    fig, axes = plt.subplots(nrows=len(relative_times)/3, ncols=3, figsize=(8,4))
     fig.subplots_adjust(hspace=-0.2)
+    #fig.subplots_adjust(hspace=0.3)
+
 
     if len(relative_times) == 1:
         axes = [axes]
@@ -331,7 +339,7 @@ def main():
                                vel_mag_maxlim=vel_mag_maxlim,
                                vel_mag_err_maxlim=vel_mag_err_maxlim,
                                ftype=ftype, coords=coords, dbdir=dbdir,
-                               db_name=None, sqrt_weighting=sqrt_weighting)
+                               db_name=None, weighting=weighting)
 
         # plot the flow vectors
         title = "Time = " + str(relative_time)
@@ -343,7 +351,7 @@ def main():
     cbar_ax = fig.add_axes([0.90, 0.25, 0.02, 0.5])
     add_cbar(fig, coll, bounds, cax=cbar_ax, label="Speed [m/s]")
     # save the fig
-    fig.savefig(fig_dir + fig_name + ".png", dpi=300)
+    fig.savefig(fig_dir + fig_name + ".png", dpi=300, bbox_inches="tight")
     plt.close(fig)
     #plt.show()
 

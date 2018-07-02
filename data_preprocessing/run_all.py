@@ -261,9 +261,11 @@ def create_master_db(ftype = "fitacf", coords="mlt",
 		     filtered_interval=2.,
 		     input_dbname=None, output_dbname=None,
 		     dbdir="../data/sqlite3/",
-		     master_table=True):
+		     master_table=False, superposed_master_table=True,
+                     master_summary_table=False, IMF_turning="northward",
+                     event_status="good"):
 
-    from build_master_db import build_master_table 
+    from build_master_db import build_master_table, build_superposed_master_table 
 
     if input_dbname is None:
 	input_dbname = "sd_" + str(int(filtered_interval)) + "_min_median_" +\
@@ -275,6 +277,8 @@ def create_master_db(ftype = "fitacf", coords="mlt",
     output_table_1 = "master_all_radars"
     input_table_2 = "master_all_radars"
     output_table_2 = "master_summary_all_radars"
+
+    output_table = "master_superposed_epoch"
 
     # create a log file to which any error occured will be written.
     logging.basicConfig(filename="./log_files/master_table_" + ".log",
@@ -288,6 +292,14 @@ def create_master_db(ftype = "fitacf", coords="mlt",
                            dbdir=dbdir, input_dbname=input_dbname,
                            output_dbname=output_dbname)
         print "A master table has been built"
+
+    if superposed_master_table:
+        print "building a master table"
+        df_events = build_event_database(IMF_turning=IMF_turning, event_status=event_status)
+        build_superposed_master_table(output_table, df_events=df_events, half_interval_length=75,
+                                      imf_lagtime=15, ftype=ftype, coords=coords,
+                                      dbdir=dbdir, input_dbname=None, output_dbname=None)
+
     return
 
 if __name__ == "__main__":
@@ -296,19 +308,66 @@ if __name__ == "__main__":
 #    stms = [dt.datetime(2013, 2, 21, 3, 2)]
 #    etms = [dt.datetime(2013, 2, 21, 5, 2)]
 
+
 #################################################
     # Create event list
     import sys
     sys.path.append("../data/")
     from create_event_list import create_event_list
-    half_interval_length = 75.    # minutes
-    IMF_turning = "southward"
+    #half_interval_length = 75.    # minutes
+    half_interval_length = 50.    # minutes
+    #IMF_turning = "northward"
+    IMF_turning = "all"
     IMF_events = True
-    df_turn = create_event_list(IMF_events=IMF_events, IMF_turning=IMF_turning)
 
-    # Find the convection respond time
-    turn_dtms = [x.to_pydatetime() for x in df_turn.datetime]
-    lag_times = df_turn.lag_time.as_matrix()
+#    df_turn = create_event_list(IMF_events=IMF_events, IMF_turning=IMF_turning)
+#    #df_turn = df_turn.loc[df_turn.datetime == dt.datetime(2014, 1, 1, 8, 0), :]
+#
+#    # Find the convection respond time
+#    turn_dtms = [x.to_pydatetime() for x in df_turn.datetime]
+#    #lag_times = df_turn.lag_time.as_matrix()
+#    lag_times = [15] * len(df_turn.lag_time.as_matrix())
+
+
+    #turn_dtms = [dt.datetime(2015, 10, 18, 5, 38)]
+    #turn_dtms = [dt.datetime(2015, 11, 16, 6, 4)]
+    #turn_dtms = [dt.datetime(2015, 12, 22, 11, 36)]
+    #turn_dtms = [dt.datetime(2014, 11, 21, 9, 43)]
+    #turn_dtms = [dt.datetime(2014, 12, 7, 10, 40)]
+    #turn_dtms = [dt.datetime(2014, 2, 8, 7, 50)]
+    #turn_dtms = [dt.datetime(2013, 11, 11, 14, 13)]
+    #turn_dtms = [dt.datetime(2012, 11, 20, 8, 46)]
+    #turn_dtms = [dt.datetime(2013, 2, 8, 3, 53)]
+
+    #turn_dtms = [dt.datetime(2015, 11, 29, 8, 40)]
+    #turn_dtms = [dt.datetime(2015, 12, 2, 8, 5)]
+    #turn_dtms = [dt.datetime(2016, 1, 17, 11, 5)]
+    #turn_dtms = [dt.datetime(2015, 12, 28, 9, 5)]
+    #turn_dtms = [dt.datetime(2015, 11, 17, 7, 56)]
+    #turn_dtms = [dt.datetime(2014, 12, 7, 10, 5)]
+    #turn_dtms = [dt.datetime(2015, 11, 18, 13, 50)]
+    #turn_dtms = [dt.datetime(2014, 11, 19, 11, 10)]
+    #turn_dtms = [dt.datetime(2013, 2, 28, 6, 47)]
+    #turn_dtms = [dt.datetime(2012, 11, 21, 3, 43)]
+    #turn_dtms = [dt.datetime(2013, 11, 8, 5, 34)]
+    #turn_dtms = [dt.datetime(2013, 2, 20, 4, 22)]
+    #turn_dtms = [dt.datetime(2016, 1, 23, 6, 43)]
+    #turn_dtms = [dt.datetime(2016, 1, 10, 13, 49)]
+    #turn_dtms = [dt.datetime(2016, 2, 2, 13, 58)]
+    #turn_dtms = [dt.datetime(2016, 2, 21, 4, 2)]
+    #turn_dtms = [dt.datetime(2014, 11, 20, 6, 37)]
+    #turn_dtms = [dt.datetime(2015, 11, 16, 6, 4)]
+    #turn_dtms = [dt.datetime(2015, 2, 8, 8, 5)]
+
+    #turn_dtms = [dt.datetime(2012, 12, 14, 3, 47)]
+    #turn_dtms = [dt.datetime(2012, 1, 9, 10, 25)]
+    #turn_dtms = [dt.datetime(2012, 1, 18, 10, 51)]
+    #turn_dtms = [dt.datetime(2012, 2, 1, 5, 12)]
+    turn_dtms = [dt.datetime(2012, 2, 6, 13, 53)]
+    
+    
+
+    lag_times = [20] * len(turn_dtms)
     event_dtms = [turn_dtms[i] + dt.timedelta(seconds=60. * lag_times[i])\
 		  for i in range(len(turn_dtms))]
 
@@ -328,12 +387,12 @@ if __name__ == "__main__":
     run_in_parallel = False
 
     # Control the processing procedures
-    do_move_to_db = False
+    do_move_to_db = True
     do_add_geolatc_geolonc = True
     do_convert_geo_to_mlt = True
     do_bin_to_grids = True
-    do_median_filter = True
-    do_create_master_db = True
+    do_median_filter = False
+    do_create_master_db = False    # NOTE: need to be completed 
 
     # Move data from files to db 
     if do_move_to_db:

@@ -59,7 +59,7 @@ def move_to_db(df, table_name=None,
              "hemi TEXT, mlat TEXT, mlt TEXT, " +\
              "sat_num TEXT, " +\
              "PRIMARY KEY(datetime, sat_num))"
-    schema.format(tb=table_name)
+    schema = schema.format(tb=table_name)
 
     # Write data to db
     print("Writing data to db")
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     file_dir = "../data/ssusi/"
 
     #sat_nums = ["f16", "f17", "f18", "f19"]
-    sat_nums = ["f16"]
+    sat_nums = ["f17"]
     hemi="north"
 
     for cdate in event_dates:
@@ -104,7 +104,7 @@ if __name__ == "__main__":
             df = read_ssusi_aurora_data(cdate, file_dir=file_dir,
                                         sat_num=sat_num, hemi=hemi)
 
-            # Move data to DB
-            move_to_db(df, table_name=table_name,
-                       db_name=db_name, dbdir=dbdir)
+#            # Move data to DB
+#            move_to_db(df, table_name=table_name,
+#                       db_name=db_name, dbdir=dbdir)
 

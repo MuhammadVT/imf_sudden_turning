@@ -1,12 +1,16 @@
+import sqlite3
+import pandas as pd
+import numpy as np
+import logging
+from davitpy.utils.coordUtils import coord_conv
+
 def tec_to_db(stm, etm, inpDir = "/sd-data/med_filt_tec/",
               table_name=None, db_name=None, dbdir="../data/sqlite3/"):
 
     """Writes GPS TEC data to a sqlite db
     """
 
-    import pandas as pd
     from funcs import convert_to_datetime
-    import sqlite3
 
     if db_name is None:
         db_name = "med_filt_tec.sqlite"
@@ -53,6 +57,84 @@ def tec_to_db(stm, etm, inpDir = "/sd-data/med_filt_tec/",
 
     return
 
+def add_mlt_col(stm=None, etm=None, t_c_alt=0., table_name=None,
+                db_name=None, dbdir="../data/sqlite3/"):
+
+    """Calculates MLT locations of TEC data """
+
+    if db_name is None:
+        db_name = "med_filt_tec.sqlite"
+    if table_name is None:
+        table_name = "med_filt_tec"
+
+    # Make a db connection
+    conn = sqlite3.connect(dbdir + db_name, detect_types=sqlite3.PARSE_DECLTYPES)
+    cur = conn.cursor()
+
+    # add new columns for mlt
+    try:
+        command ="ALTER TABLE {tb} ADD COLUMN mlt REAL".format(tb=table_name)
+        cur.execute(command)
+    except:
+        # pass if the column mlt exists
+        pass
+
+    # do the convertion to all the data in db if stm and etm are all None
+    if (stm is not None) and (etm is not None):
+        command = "SELECT mlat, mlon, datetime FROM {tb} " +\
+                  "WHERE datetime BETWEEN '{sdtm}' AND '{edtm}'"
+        command = command.format(tb=table_name, sdtm=stm, edtm=etm)
+
+    # do the convertion to the data between stm and etm if any of them is None
+    else:
+        command = "SELECT mlat, mlon, datetime FROM {tb}"
+        command = command.format(tb=table_name)
+    try:
+        cur.execute(command)
+    except Exception, e:
+        logging.error(e, exc_info=True)
+
+    rows = cur.fetchall()
+    # do the conversion row by row
+    if rows:
+        for row in rows:
+            if row:
+                lat, lon, date_time= row
+
+                # convert from mag to mlt coords
+                lt, lat = coord_conv(lon, lat, "mag", "mlt",
+                                     altitude=t_c_alt, date_time=date_time)
+                lt = (round(lt,1))%360
+                lat = round(lat,1)
+
+                # Add to db
+                command = "UPDATE {tb} SET mlt={lt} " +\
+                          "WHERE mlat={lat} AND mlon={lon} AND datetime = '{dtm}'"
+                command = command.format(tb=table_name, lat=lat, lon=lon,
+                                         lt=lt, dtm=date_time)
+                print command
+                # do the update
+                try:
+                    cur.execute(command)
+                except Exception, e:
+                    logging.error(e, exc_info=True)
+
+            else:
+                continue
+
+        # commit the results
+        try:
+            conn.commit()
+        except Exception, e:
+            logging.error(e, exc_info=True)
+
+
+    # Close db connection
+    conn.close()
+
+    return
+
+
 if __name__ == "__main__":
 
     import datetime as dt
@@ -90,6 +172,8 @@ if __name__ == "__main__":
 
 #    stms = [stms[0]]
 #    etms = [etms[0]]
+
+    # Move TEC data to DB
     # loop through the datetimes in stms
     for i in range(len(stms)):
         stm = stms[i]
@@ -99,5 +183,10 @@ if __name__ == "__main__":
         tec_to_db(stm, etm, inpDir=inpDir, table_name=table_name,
                   db_name=db_name, dbdir=dbdir)
 
-
+        # Add MLT column
+        # NOTE: This runs very sloooooooowly
+#        print("adding MLT column")
+#        add_mlt_col(stm=stm, etm=etm, t_c_alt=0., table_name=table_name,
+#                    db_name=db_name, dbdir=dbdir)
+#        print("Done for tec data between " + str(stm) + " and " + str(etm))
 

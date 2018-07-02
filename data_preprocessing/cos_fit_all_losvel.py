@@ -147,6 +147,8 @@ def cosfit_superposed_epoch(input_table, output_table, db_name=None,
 
         # Do cosing fitting for each MLAT-MLT cell
         for ii in xrange(len(lats)):
+            if lats[ii] is None:
+                continue
             gltc_left = lons[ii] - mlt_width/2.*15.
             gltc_right = lons[ii] + mlt_width/2.*15.
             if gltc_right >=360 or gltc_left < 0:
@@ -254,21 +256,28 @@ def main():
     start_reltime = -30
     end_reltime = 30
     reltime_resolution = 2
-    #reltime_list = range(start_reltime, end_reltime+reltime_resolution, reltime_resolution)
+    reltime_list = range(start_reltime, end_reltime+reltime_resolution, reltime_resolution)
     #reltime_list = [-30, -20, -10, -6, 0, 6, 10, 20, 30]
-    reltime_list = [-20, 20]
-    mlt_width = 1.
+    #reltime_list = [-8, -4, -2, 2, 4, 8]
+
+    #tmp_reltime = [-30, -20, -10, -6, 0, 6, 10, 20, 30] + [-8, -4, -2, 2, 4, 8]
+    #reltime_list = [ x for x in reltime_list if x not in tmp_reltime]
+
+    #reltime_list = [-20, 20]
+    mlt_width = 2.0
     fit_by_bmazm=False   # Not implemented yet
     fit_by_losvel_azm = True
-    abs_azm_maxlim = 75
+    abs_azm_maxlim = 60
     abs_losvel_maxlim=300
     unique_azm_count_minlim=3 
     fitvel_bounds=(-300., 300.)
     weighting = "std"
     #weighting = None     # No weighting is used
 
-    input_table = "master_superposed_epoch"
-    output_table = "master_cosfit_superposed_mltwidth_" + str(int(mlt_width)) +\
+    #IMF_turning = "southward"
+    IMF_turning = "northward"
+    input_table = "master_superposed_epoch_" + IMF_turning 
+    output_table = "master_cosfit_superposed_" + IMF_turning + "_mltwidth_" + str(int(mlt_width)) +\
                    "_res_" + str(reltime_resolution) + "min"
 
     # create a log file to which any error occured between client and

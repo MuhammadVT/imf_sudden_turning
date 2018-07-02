@@ -34,6 +34,38 @@ def find_bmnum(rad, stm, etm, mag_bmazm=45,
 
     return bmnum
 
+def add_cbar(fig, mappable, label="Velocity [m/s]", cax=None,
+             ax=None, shrink=0.65, title_size=14,
+             ytick_label_size=12):
+
+    # add color bar
+    if cax:
+        cbar=fig.colorbar(mappable, ax=ax, cax=cax,
+                          orientation="vertical", drawedges=False)
+    else:
+        cbar=fig.colorbar(mappable, ax=ax, cax=cax, shrink=shrink,
+                          orientation="vertical", drawedges=False)
+
+#    #define the colorbar labels
+#    l = []
+#    for i in range(0,len(bounds)):
+#        if i == 0 or i == len(bounds)-1:
+#            l.append(' ')
+#            continue
+#        l.append(str(int(bounds[i])))
+#    cbar.ax.set_yticklabels(l)
+    cbar.ax.tick_params(axis='y',direction='in')
+    cbar.set_label(label)
+
+    #set colorbar ticklabel size
+    for ti in cbar.ax.get_yticklabels():
+        ti.set_fontsize(ytick_label_size)
+    cbar.set_label(label, size=title_size)
+    cbar.extend='max'
+
+    return
+
+
 
 if __name__ == "__main__":
 
@@ -46,6 +78,4 @@ if __name__ == "__main__":
                        bmazm_diff=3.,
                        db_name="sd_gridded_los_data_fitacf.sqlite",
                        dbdir = "../data/sqlite3/")
-
-
 

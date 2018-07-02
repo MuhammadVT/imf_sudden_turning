@@ -11,7 +11,7 @@ def plot_cosfit(ax, latc, ltc, master_table, cosfit_table,
                 ftype="fitacf", coords="mlt", 
                 fit_by_bmazm=False, fit_by_losvel_azm=True,
                 db_name=None, dbdir="../data/sqlite3/",
-                sqrt_weighting=False, add_errbar=False):
+                weighting=None, add_errbar=False):
 
     """ plots a the cosfit results for a give latc-ltc grid for a given relative_time
     Parameters
@@ -40,9 +40,12 @@ def plot_cosfit(ax, latc, ltc, master_table, cosfit_table,
     coords : str
         Coordinates in which the binning process took place.
         Default to "mlt, can be "geo" as well.
-    sqrt_weighting : bool
-        if set to False, the fitted vectors that are produced by equality weighting
-        the number of points within each azimuthal bin will be retrieved.
+    weighting : str (Default to None)
+        Type of weighting used for curve fitting
+        if set to None, all azimuthal bins are
+        considered equal regardless of the nubmer of points
+        each of them contains.
+
 
     """
 
@@ -59,10 +62,8 @@ def plot_cosfit(ax, latc, ltc, master_table, cosfit_table,
         logging.error(e, exc_info=True)
 
     # set input_table name
-    if sqrt_weighting:
-        cosfit_table = cosfit_table
-    else:
-        cosfit_table = cosfit_table
+    if weighting is not None:
+        cosfit_table = cosfit_table + "_" + weighting + "_weight"
 
     # add new columns
     if coords == "mlt":
@@ -179,14 +180,15 @@ def plot_cosfit(ax, latc, ltc, master_table, cosfit_table,
 if __name__ == "__main__":
 
     # input parameters
-    relative_time=-30
+    relative_time=-10
     reltime_resolution=2
-    mlt_width=1.
+    mlt_width=2.0
     fit_by_bmazm=False
     fit_by_losvel_azm=True
     ftype = "fitacf"
     coords = "mlt"
-    sqrt_weighting = False
+    #weighting = None    # No weighting is used if set to None
+    weighting = "std"
     dbdir="../data/sqlite3/"
 
     master_table = "master_superposed_epoch"
@@ -195,6 +197,10 @@ if __name__ == "__main__":
 
     fixed_lat = True
     fixed_lt = True
+
+    azm_lim = [-180, 180]
+    #losvel_lim = [-150, 150]
+    losvel_lim = [-200, 200]
     # Plot points at a given latitude
     if fixed_lat:
         # points of interest
@@ -210,10 +216,11 @@ if __name__ == "__main__":
             plt.subplots_adjust(hspace=0.4)
             axes = [x for l in axes for x in l]
 
-            fig_dir = "../plots/cosfit_plot/"
-            #fig_name = rads_txt + "_" + relative_time + "_cosfit_mlat"+str(latc) + \
-            #           "_mlt" + str(round(ltc/15., 2))
-            fig_name = "reltime_" + str(relative_time) + "_cosfit_mlat"+str(latc)
+            #fig_dir = "../plots/cosfit_plot/"
+            fig_dir = "/home/muhammad/Dropbox/tmp/cosfit/"
+            fig_name = "reltime_" + str(relative_time) + "_cosfit_mlat"+str(latc)+\
+                       "_mltwidth_" + str(int(mlt_width)) +\
+                       "_res_" + str(reltime_resolution) + "min"
 
             for i, ltc in enumerate(ltc_list):
                 ax = axes[i]
@@ -222,10 +229,10 @@ if __name__ == "__main__":
                             mlt_width=mlt_width, ftype=ftype, coords="mlt", 
                             fit_by_bmazm=fit_by_bmazm, fit_by_losvel_azm=fit_by_losvel_azm,
                             db_name=None, dbdir=dbdir,
-                            sqrt_weighting=sqrt_weighting, add_errbar=False)
+                            weighting=weighting, add_errbar=False)
 
-                ax.set_xlim([-180, 180])
-                ax.set_ylim([-100, 100])
+                ax.set_xlim(azm_lim)
+                ax.set_ylim(losvel_lim)
 
                 # change the font
                 for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +
@@ -259,8 +266,11 @@ if __name__ == "__main__":
             plt.subplots_adjust(hspace=0.4)
             axes = [x for l in axes for x in l]
 
-            fig_dir = "../plots/cosfit_plot/"
-            fig_name = "reltime_" + str(relative_time) + "_mlt" + str(round(ltc/15., 0))
+            #fig_dir = "../plots/cosfit_plot/"
+            fig_dir = "/home/muhammad/Dropbox/tmp/cosfit/"
+            fig_name = "reltime_" + str(relative_time) + "_mlt" + str(round(ltc/15., 0)) +\
+                       "_mltwidth_" + str(int(mlt_width)) +\
+                       "_res_" + str(reltime_resolution) + "min"
 
             for i, latc in enumerate(latc_list):
                 ax = axes[i]
@@ -269,10 +279,10 @@ if __name__ == "__main__":
                             mlt_width=mlt_width, ftype=ftype, coords="mlt", 
                             fit_by_bmazm=fit_by_bmazm, fit_by_losvel_azm=fit_by_losvel_azm,
                             db_name=None, dbdir=dbdir,
-                            sqrt_weighting=sqrt_weighting, add_errbar=False)
+                            weighting=weighting, add_errbar=False)
 
-                ax.set_xlim([-180, 180])
-                ax.set_ylim([-100, 100])
+                ax.set_xlim(azm_lim)
+                ax.set_ylim(losvel_lim)
 
                 # change the font
                 for item in ([ax.title, ax.xaxis.label, ax.yaxis.label] +

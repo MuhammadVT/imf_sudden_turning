@@ -234,9 +234,9 @@ if __name__ == "__main__":
     lat_range=[54, 59]
     lat_min = 50
     reltime_resolution=2
-    mlt_width=1.
+    mlt_width=2.
     gazmc_span_minlim=30
-    vel_mag_err_maxlim=0.2
+    vel_mag_err_maxlim=0.5
     vel_mag_maxlim=200.
     fit_by_bmazm=False
     fit_by_losvel_azm=True
@@ -245,18 +245,61 @@ if __name__ == "__main__":
     #weighting = None 
     weighting = "std"
     dbdir="../data/sqlite3/"
+    IMF_turning = "northward"
+    #IMF_turning = "southward"
 
-    input_table = "master_cosfit_superposed_mltwidth_" + str(int(mlt_width)) +\
+    input_table = "master_cosfit_superposed_" + IMF_turning + "_mltwidth_" + str(int(mlt_width)) +\
                    "_res_" + str(reltime_resolution) + "min"
 
-    reltime_range=[-20, 20]
-    mlt_ranges=[[-3.4, -2.6], [-0,4, 0.4], [2.6, 3.4]]
-    ylim_list = [[-200, 200], [-100, 100], [-100, 100]]
-    veldir_list = ["zonal", "meridional", "zonal"]
+    reltime_range=[-26, 26]
+    del_mlt = 0.4
+#    mlt_ranges=[[-3-del_mlt, -3+del_mlt], [-1-del_mlt, -1+del_mlt],
+#                [0-del_mlt,   0+del_mlt], [0-del_mlt,   0+del_mlt],
+#                [1-del_mlt,   1+del_mlt], [3-del_mlt,   3+del_mlt]]
+
+
+#    mlt_ranges=[[-4-del_mlt, -4+del_mlt], [-2-del_mlt, -2+del_mlt],
+#                [0-del_mlt,   0+del_mlt], [0-del_mlt,   0+del_mlt],
+#                [2-del_mlt,   2+del_mlt], [4-del_mlt,   4+del_mlt]]
+
+#    ylim_list = [[-180, 180], [-100, 100],
+#                 [-100, 100], [-50, 50],
+#                 [-100, 100], [-100, 100]]
+
+
+#    mlt_ranges=[[-4-del_mlt, -4+del_mlt], [-2-del_mlt, -2+del_mlt], [-1-del_mlt,   -1+del_mlt],  
+#                [0-del_mlt,   0+del_mlt],
+#                [1-del_mlt,   1+del_mlt], [2-del_mlt,   2+del_mlt], [4-del_mlt,   4+del_mlt]]
+
+    mlt_ranges=[[-4-del_mlt, -4+del_mlt], [-3-del_mlt, -3+del_mlt], [-2-del_mlt, -2+del_mlt],
+                [-1-del_mlt, -1+del_mlt], [0-del_mlt,   0+del_mlt], [1-del_mlt,   1+del_mlt],
+                [2-del_mlt,   2+del_mlt], [3-del_mlt,   3+del_mlt], [4-del_mlt,   4+del_mlt]]
+
+
+
+    #veldir_list = ["zonal", "zonal", "zonal", "meridional", "zonal", "zonal"]
+    #vel_dir = "zonal"
+    vel_dir = "meridional"
+    veldir_list = [vel_dir] * len(mlt_ranges)
+
+    if vel_dir == "zonal":
+#        ylim_list = [[-180, 180], [-180, 180], [-100, 100],
+#                     [-100, 100],
+#                     [-100, 100], [-100, 100], [-100, 100]]
+        ylim_list = [[-180, 180], [-180, 180], [-180, 180],
+                     [-100, 100], [-100, 100], [-100, 100],
+                     [-100, 100], [-100, 100], [-100, 100]]
+
+    else:
+        ylim_list = [[-80, 80]]  * len(mlt_ranges)
+
+
     add_err_bar = False
     glatc_list = np.arange(lat_range[1], lat_range[0], -1) - 0.5 
 
-    fig, axes = plt.subplots(nrows=len(mlt_ranges), ncols=1, sharex=True, figsize=(8, 6))
+    fig, axes = plt.subplots(nrows=len(mlt_ranges), ncols=1, sharex=True, figsize=(6, 15))
+    fig.subplots_adjust(hspace=0.3)
+
 
     for i, mlt_range in enumerate(mlt_ranges): 
         ax = axes[i]
@@ -290,15 +333,16 @@ if __name__ == "__main__":
     axes[-1].xaxis.set_major_locator(MultipleLocator(base=5))
 
     # save the fig
-    fig_dir = "/home/muhammad/Dropbox/tmp/tmp/"
+    fig_dir = "/home/muhammad/Dropbox/tmp/convection/tmp/"
     #fig_name = "line_plot"
-    fig_name = "line_plot_lat" + str(lat_range[0]) +\
+    fig_name = "line_plot_" + vel_dir + "_" + IMF_turning + "_lat" + str(lat_range[0]) +\
                "_to_lat" + str(lat_range[1]) +\
                "_mltwidth_" + str(int(mlt_width)) +\
                "_res_" + str(reltime_resolution) + "min" + \
                "_nvel_min_" + str(nvel_min) + "velmag_err_"  + str(vel_mag_err_maxlim)
 
     fig.savefig(fig_dir + fig_name + ".png", dpi=300, bbox_inches="tight")
+    plt.close(fig)
     #plt.show()
 
 

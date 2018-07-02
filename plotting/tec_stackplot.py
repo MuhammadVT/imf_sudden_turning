@@ -12,7 +12,7 @@ from funcs import add_cbar
 #plt.style.use("ggplot")
 
 def plot_tec(ax, dtm, mag_latc_range=[53, 62], mltc_range=[-6, 6],
-             t_c_alt=0., cmap="gist_gray_r", scatter=False, norm=None,
+             t_c_alt=0., cmap="gist_gray_r", scatter_plot=False, norm=None,
              db_name=None, dbdir="../data/sqlite3/"):
 
     """ Makes a TEC plot for a given dtm
@@ -63,7 +63,7 @@ def plot_tec(ax, dtm, mag_latc_range=[53, 62], mltc_range=[-6, 6],
         df = df.sort_values("mlt")
 
         # Construct arrays
-        if scatter:
+        if scatter_plot:
             xs = df.mlt.as_matrix()
             ys = df.mlat.as_matrix()
             cs = df.med_tec.as_matrix()
@@ -81,7 +81,7 @@ def plot_tec(ax, dtm, mag_latc_range=[53, 62], mltc_range=[-6, 6],
         xs = xs / 15.
 
         # Plot the data
-        if scatter:
+        if scatter_plot:
             ccoll = ax.scatter(xs, ys, s=30.0, zorder=1,
                                marker="s", c=cs,
                                linewidths=.5, edgecolors='face',
@@ -98,28 +98,79 @@ def plot_tec(ax, dtm, mag_latc_range=[53, 62], mltc_range=[-6, 6],
     ax.set_ylabel("MLAT", fontsize=10)
     ax.set_ylim([mag_latc_range[0], mag_latc_range[1]])
     ax.set_xlim([mltc_range[0], mltc_range[1]])
-    #ax.axvline(x=0, color="r", linestyle="--", linewidth=1.)
+    ax.axhline(y=65., color="r", linestyle="--", linewidth=1.)
 
     # Close conn
     conn.close()
 
     return ccoll
 
+def overlay_ssusi_aurbnd(ax, dtm, hemi="north", search_interval=20., table_name=None,
+                         db_name=None, dbdir="../data/sqlite3/"):
+
+    """Overlays DMSP SSUSI data
+
+    Parameters:
+    ----------
+    search_interval : float
+        The total search interval length centered at dtm
+
+    """
+
+    if db_name is None:
+        db_name = "ssusi_aur_bnd.sqlite"
+    if table_name is None:
+        table_name = "aur_bnd"
+
+    # Make a db connection
+    conn = sqlite3.connect(dbdir + db_name, detect_types=sqlite3.PARSE_DECLTYPES)
+
+    # Construct stm and etm
+    stm = dtm - dt.timedelta(seconds=60. * search_interval/2.)
+    etm = dtm + dt.timedelta(seconds=60. * search_interval/2.)
+
+    # Get the data
+    command = "SELECT datetime, mlat, mlt, sat_num FROM {tb} " +\
+	      "WHERE hemi = '{hemi}' AND " +\
+	      "datetime BETWEEN '{stm}' AND '{etm}'"
+    command = command.format(tb=table_name, hemi=hemi, stm=stm, etm=etm)
+    df = pd.read_sql(command, conn)
+
+    # Clone db connection
+    conn.close()
+
+    # Plot the data
+    sat_nums = df.sat_num.unique().tolist()
+    sat_colors = {"f16" : "cyan", "f17":"g", "f18":"orange", "f19":"r"}
+    if not df.empty:
+        for i, row in df.iterrows():
+            sat_num = str(row.sat_num)
+            xs = json.loads(row.mlt)
+            ys = json.loads(row.mlat)
+            ax.scatter(xs, ys, s=3.0, zorder=2,
+                       marker="o", c=sat_colors[sat_num],
+                       linewidths=.5, edgecolors='face', label=sat_num)
+        #ax.legend()
+    return
 
 if __name__ == "__main__":
 
     from matplotlib.colors import BoundaryNorm, Normalize
 
     stable_interval=30
+    mag_latc_range=[50, 75]
     IMF_turning = "southward"
     #IMF_turning = "northward"
+    overlay_aurbnd = True
+    ssusi_search_interval=20.
+
     cmap="gist_gray_r"
     norm = Normalize(vmin=0,vmax=10)
 
     #event_dtm = dt.datetime(2014, 12, 16, 14, 2)
-    #event_dtm = dt.datetime(2013, 2, 21, 5, 34)
+    event_dtm = dt.datetime(2013, 2, 21, 4, 2)
     #event_dtm = dt.datetime(2014, 1, 1, 8, 0)
-    event_dtm = dt.datetime(2014, 2, 3, 7, 20)
+    #event_dtm = dt.datetime(2014, 2, 3, 7, 20)
 
     # Create event list
     df_turn = create_event_list(IMF_turning=IMF_turning)
@@ -144,13 +195,18 @@ if __name__ == "__main__":
     mappable = None
     for k, dtm in enumerate(dtms):
         ax = axes[k]
-        tec_mappable = plot_tec(ax, dtm, mag_latc_range=[53, 65], mltc_range=[-6, 6],
-                                t_c_alt=0., cmap=cmap, norm=norm, scatter=False,
+        tec_mappable = plot_tec(ax, dtm, mag_latc_range=mag_latc_range, mltc_range=[-6, 6],
+                                t_c_alt=0., cmap=cmap, norm=norm, scatter_plot=False,
                                 db_name = "med_filt_tec.sqlite",
                                 dbdir = "../data/sqlite3/")
         ax.set_title(dtm.strftime("%m/%d/%Y  %H:%M"), fontsize=10)
         if tec_mappable:
             mappable = tec_mappable
+
+        # Overlay SSUSI Aurora Boundary
+        if overlay_aurbnd:
+            #df = overlay_ssusi_aurbnd(ax, dtm, search_interval=ssusi_search_interval)
+            overlay_ssusi_aurbnd(ax, dtm, hemi="north", search_interval=ssusi_search_interval)
     axes[-1].set_xlabel("MLT")
 
     # Add colorbar for LOS Vel.
@@ -159,6 +215,7 @@ if __name__ == "__main__":
         cbar_ax = fig.add_axes([0.85, 0.30, 0.03, 0.4])
         add_cbar(fig, mappable, label="Velocity [m/s]", cax=cbar_ax,
                  ax=None, title_size=10, ytick_label_size=10)
+
 
 ##############################
     from superpose_single_event_losvel import plot_imf, plot_aualae
@@ -181,5 +238,16 @@ if __name__ == "__main__":
 ##############################
 
     #plt.show()
+    fig_dir = "../plots/tec_stackplot/"
+    fig_name = "tec_mlat_vs_mlt_" + event_dtm.strftime("%Y%m%d.%H%M_") + IMF_turning
+    fig2_name = "imf_aual_" + event_dtm.strftime("%Y%m%d.%H%M_") + IMF_turning
+
     fig.savefig("/home/muhammad/Dropbox/tmp/fig1.png", dpi=200, bbox_inches="tight")
     fig2.savefig("/home/muhammad/Dropbox/tmp/fig2.png",dpi=200,  bbox_inches="tight")
+
+    #fig.savefig(fig_dir + fig_name + ".png", dpi=200, bbox_inches="tight")
+    #fig2.savefig(fig_dir + fig2_name + ".png", dpi=200,  bbox_inches="tight")
+    plt.close(fig)
+    plt.close(fig2)
+
+

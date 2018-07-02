@@ -168,7 +168,7 @@ def build_superposed_master_table(output_table, df_events=None, half_interval_le
     if output_dbname is None:
         output_dbname = "sd_master_" + coords + "_" + ftype + ".sqlite"
     if df_events is None:
-        build_event_database(IMF_turning="all", event_status="good")
+        df_events = build_event_database(IMF_turning="all", event_status="all")
 
     # make a db connection 
     try:
@@ -193,6 +193,7 @@ def build_superposed_master_table(output_table, df_events=None, half_interval_le
                   " mag_glatc float(7,2)," +\
                   " mag_gltc float(8,2)," +\
                   " mag_gazmc SMALLINT," +\
+                  " mag_bmazm REAL," +\
                   " datetime DATETIME, " +\
                   " relative_time REAL, " +\
                   " rad VARCHAR(3), " +\
@@ -204,6 +205,7 @@ def build_superposed_master_table(output_table, df_events=None, half_interval_le
                   " geo_glatc float(7,2)," +\
                   " geo_gltc float(8,2)," +\
                   " geo_gazmc SMALLINT," +\
+                  " bmazm REAL," +\
                   " datetime DATETIME, " +\
                   " relative_time REAL, " +\
                   " rad VARCHAR(3), " +\
@@ -225,12 +227,12 @@ def build_superposed_master_table(output_table, df_events=None, half_interval_le
         stm = lagged_imf_dtm - dt.timedelta(seconds=60. * half_interval_length)
         etm = lagged_imf_dtm + dt.timedelta(seconds=60. * half_interval_length)
         if coords == "mlt":
-            command = "SELECT vel, mag_glatc, mag_gltc, mag_gazmc, " +\
+            command = "SELECT vel, mag_glatc, mag_gltc, mag_gazmc, mag_bmazm, " +\
                       "datetime FROM {tb1} "+\
                       "WHERE datetime BETWEEN '{stm}' AND '{etm}' "+\
                       "ORDER By datetime ASC"
         elif coords == "geo":
-            command = "SELECT vel, geo_glatc, geo_gltc, geo_gazmc, " +\
+            command = "SELECT vel, geo_glatc, geo_gltc, geo_gazmc, bmazm, " +\
                       "datetime FROM {tb1} "+\
                       "WHERE datetime BETWEEN '{stm}' AND '{etm}' "+\
                       "ORDER By datetime ASC"
@@ -247,13 +249,13 @@ def build_superposed_master_table(output_table, df_events=None, half_interval_le
         if rows:
             if coords == "mlt":
                 command = "INSERT OR IGNORE INTO {tb2} (vel, mag_glatc, mag_gltc, " +\
-                          "mag_gazmc, datetime, relative_time, rad) VALUES (?, ?, ?, ?, ?, ?, ?)"
+                          "mag_gazmc, mag_bmazm, datetime, relative_time, rad) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
             elif coords == "geo":
                 command = "INSERT OR IGNORE INTO {tb2} (vel, geo_glatc, geo_gltc, " +\
-                          "geo_gazmc, datetime, relative_time, rad) VALUES (?, ?, ?, ?, ?, ?, ?)"
+                          "geo_gazmc, bmazm, datetime, relative_time, rad) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
             command = command.format(tb2=output_table)
             for rw in rows:
-                vels, lats, lts, azms, dtm = rw
+                vels, lats, lts, azms, bmazm, dtm = rw
                 if vels:
                     vels = json.loads(vels)
                     lats = json.loads(lats)
@@ -268,7 +270,7 @@ def build_superposed_master_table(output_table, df_events=None, half_interval_le
                         azm = azms[i]
                         # insert the data
                         try:
-                            cur_out.execute(command, (vel, lat, lt, azm, dtm, relative_time, rad))
+                            cur_out.execute(command, (vel, lat, lt, azm, bmazm, dtm, relative_time, rad))
                         except Exception, e:
                             logging.error(e, exc_info=True)
                 else:
@@ -451,8 +453,9 @@ def main(master_table=True, superposed_master_table=False, master_summary_table=
     output_table_2 = "master_summary_all_radars"
 
     IMF_turning = "northward"
+    #IMF_turning = "southward"
     event_status = "good"
-    output_table = "master_superposed_epoch"
+    output_table = "master_superposed_epoch_" + IMF_turning
 
     # create a log file to which any error occured will be written.
     logging.basicConfig(filename="./log_files/superposed_master_table" + ".log",

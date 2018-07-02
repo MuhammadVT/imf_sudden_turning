@@ -170,7 +170,9 @@ def add_tec_at_rangecell(rad, stm=None, etm=None,
                          output_db="tec_at_rangecell.sqlite",
                          dbdir="../data/sqlite3/"):
 
-    """Add TEC values for each ragne-cell"""
+    """Add TEC values for each ragne-cell
+    NOTE: This functiosn runs very very sloooooow. 
+    """
 
     import sys
     sys.path.append("../")
