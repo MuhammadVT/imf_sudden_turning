@@ -180,17 +180,15 @@ def vel_vs_reltime(ax, data_dict, veldir="zonal", sampling_method="median",
         vel_comp_jj = np.array([vel_comp[i] for i in range(len(vel_comp)) if data_dict['glatc'][i] == mlat])
         vel_reltime_jj = np.array([vel_reltime[i] for i in range(len(vel_comp)) if data_dict['glatc'][i] == mlat])
         vel_comp_err_jj = np.array([vel_comp_err[i] for i in range(len(vel_comp_err)) if data_dict['glatc'][i] == mlat])
-        xs = vel_reltime_jj
-        ys = vel_comp_jj
 
         xs = []
         ys = []
         for reltm in np.unique(vel_reltime_jj):
             xs.append(reltm)
-            if method = "median":
+            if sampling_method == "median":
                 # Do median filter
                 ys.append(np.median(vel_comp_jj[np.where(vel_reltime_jj == reltm)]))
-            if method = "mean":
+            if sampling_method == "mean":
                 ys.append(np.mean(vel_comp_jj[np.where(vel_reltime_jj == reltm)]))
 
         # plot the velocities for each MLAT
