@@ -136,7 +136,7 @@ def fetch_data(input_table, lat_range=[53, 59], nvel_min=3,
 
     return data_dict
 
-def vel_vs_reltime(ax, data_dict, veldir="zonal",
+def vel_vs_reltime(ax, data_dict, veldir="zonal", sampling_method="median",
                    glatc_list=None, title="xxx", add_err_bar=False,
                    color_list=None, marker_size=2, marker_type="o"):
 
@@ -183,12 +183,15 @@ def vel_vs_reltime(ax, data_dict, veldir="zonal",
         xs = vel_reltime_jj
         ys = vel_comp_jj
 
-        # Do median filter
         xs = []
         ys = []
         for reltm in np.unique(vel_reltime_jj):
             xs.append(reltm)
-            ys.append(np.median(vel_comp_jj[np.where(vel_reltime_jj == reltm)]))
+            if method = "median":
+                # Do median filter
+                ys.append(np.median(vel_comp_jj[np.where(vel_reltime_jj == reltm)]))
+            if method = "mean":
+                ys.append(np.mean(vel_comp_jj[np.where(vel_reltime_jj == reltm)]))
 
         # plot the velocities for each MLAT
         ax.plot(xs, ys, color=color_list[jj],
@@ -244,6 +247,7 @@ if __name__ == "__main__":
     coords = "mlt"
     #weighting = None 
     weighting = "std"
+    sampling_method="median"
     dbdir="../data/sqlite3/"
     IMF_turning = "northward"
     #IMF_turning = "southward"
@@ -319,7 +323,7 @@ if __name__ == "__main__":
             title = "Velocity Magnitude, MLT = " + str(round(center_mlt))
         else:
             title = veldir[0].upper()+veldir[1:] + " Velocities, MLT = " + str(round(center_mlt))
-        vel_vs_reltime(ax, data_dict, veldir=veldir,
+        vel_vs_reltime(ax, data_dict, veldir=veldir, sampling_method=sampling_method, 
                        glatc_list=glatc_list, title=title, add_err_bar=add_err_bar)
         ax.yaxis.set_major_locator(MultipleLocator(base=40))
 
