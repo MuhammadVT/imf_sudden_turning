@@ -10,7 +10,7 @@ from build_event_database import build_event_database
 
 def plot_poes_aur_bnd(selTime, ax, satList, raw_fdir="../data/poes/raw/",
 		      bnd_fdir="../data/poes/bnd/", read_bnd_from_file=True,
-		      coords = "mlt", plotCBar=True, cbar_shrink=1.0):	
+		      coords = "mlt", plotCBar=True, cax=None, cbar_shrink=1.0, titleString=None):	
 
     """Plot POES determined auroral boundary for a single event"""
 
@@ -18,11 +18,11 @@ def plot_poes_aur_bnd(selTime, ax, satList, raw_fdir="../data/poes/raw/",
     # and also overlay the estimated auroral boundary
     pltDate = dt.datetime(selTime.year, selTime.month, selTime.day)
 
-    m = utils.plotUtils.mapObj(width=80*111e3, height=80*111e3, coords=coords,\
+    m = utils.plotUtils.mapObj(ax=ax, width=80*111e3, height=80*111e3, coords=coords,\
 			       lat_0=90., lon_0=0, datetime=selTime)
     poesPltObj = poes_plot_utils.PlotUtils(pltDate, pltCoords=coords)
     poesPltObj.overlay_closest_sat_pass(selTime, m, ax, raw_fdir, satList=satList, 
-                                        plotCBar=plotCBar, timeFontSize=4., timeMarkerSize=2.,
+                                        plotCBar=plotCBar, cax=cax, timeFontSize=4., timeMarkerSize=2.,
                                         overlayTimeInterval=1, timeTextColor="red",
                                         cbar_shrink=cbar_shrink)
 
@@ -30,8 +30,12 @@ def plot_poes_aur_bnd(selTime, ax, satList, raw_fdir="../data/poes/raw/",
     # poesPltObj.overlay_equ_bnd(selTime,m,ax,rawSatDir="/tmp/poes/raw/")
     if read_bnd_from_file:
 	inpFileName = bnd_fdir + "poes-fit-" + selTime.strftime("%Y%m%d") + ".txt"
-	poesPltObj.overlay_equ_bnd(selTime, m, ax, inpFileName=inpFileName,
-				   linewidth=1, linecolor="red", line_zorder=7)
+        try:
+            poesPltObj.overlay_equ_bnd(selTime, m, ax, inpFileName=inpFileName,
+                                       linewidth=1, linecolor="red", line_zorder=7)
+        except IOError:
+            print(inpFileName + " does not exist.")
+            pass
     else:
 	poesPltObj.overlay_equ_bnd(selTime, m, ax, raw_fdir,
 				   linewidth=1, linecolor="red", line_zorder=7)
@@ -47,9 +51,12 @@ if __name__ == "__main__":
 
     raw_fdir="../data/poes/raw/"
     bnd_fdir="../data/poes/bnd/"
+    read_bnd_from_file=True
+    coords = "mlt"
     reltime_signs = [-1, 1]   # -1 indicates time before turning
     del_time = 30    # approximate relative time from the flow response time. Used to get the real relative time
     IMF_turning="northward"
+    cbar_shrink = 1.0
 
     # Plot Auroral boundary for single events
     df_turn = build_event_database(IMF_turning=IMF_turning, event_status="good")
@@ -59,14 +66,20 @@ if __name__ == "__main__":
     reltimes = []
     for imf_dtm in imf_dtms:
         print(imf_dtm)
+
+        # Create a fig
+        fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12,6))
+	fig.subplots_adjust(right=0.8)
+	cbar_ax = fig.add_axes([0.85, 0.30, 0.03, 0.4])
+
+        plotCBar_flags = [False, True]
+
         # Get the lag time in flow response
         tmp_var = df_turn.loc[df_turn.datetime==imf_dtm, :]
         lag_time = tmp_var.lag_time.iloc[0]
 
-	for reltime_sign in reltime_signs:
-	    fig = plt.figure(figsize=(12, 8))
-	    ax = fig.add_subplot(1,1,1)
-
+	for i, reltime_sign in enumerate(reltime_signs):
+	    ax = axes[i]
 	    # Find an appropriate datetime for POES
 	    poes_dtm = imf_dtm + dt.timedelta(seconds=60. * lag_time)
 	    if reltime_sign == -1:
@@ -89,14 +102,16 @@ if __name__ == "__main__":
 	    
     	    # Plot Auroral Boundary
             #satList = satList_dict[imf_dtm]["satList"]
-	    plot_poes_aur_bnd(poes_dtm, ax, satList, read_bnd_from_file=True,
-			      raw_fdir=raw_fdir, bnd_fdir=bnd_fdir,
-			      coords = "mlt")
+	    plot_poes_aur_bnd(poes_dtm, ax, satList, read_bnd_from_file=read_bnd_from_file, titleString=title_str,
+			      raw_fdir=raw_fdir, bnd_fdir=bnd_fdir, plotCBar=plotCBar_flags[i], cax=cbar_ax,
+			      coords=coords , cbar_shrink=cbar_shrink)
 
-	    # Save figure
-            fig_dir = "../plots/poes_aur_bnd/"
-	    fig_dtm_txt = imf_dtm.strftime("%Y%m%d.%H%M") + "_reltime_" + str(reltime)
-            fig_name = "poes_aur_bnd_" + IMF_turning + "_IMF_turning_" + fig_dtm_txt + ".png"
-	    fig.savefig(fig_dir + fig_name, dpi=200, bbox_inches='tight')
-	    plt.close(fig)
+        # Save figure
+        fig_dir = "../plots/poes_aur_bnd/"
+        #fig_dtm_txt = imf_dtm.strftime("%Y%m%d.%H%M") + "_reltime_" + str(reltime)
+        #fig_name = "poes_aur_bnd_" + IMF_turning + "_IMF_turning_" + fig_dtm_txt + ".png"
+        fig_dtm_txt = imf_dtm.strftime("%Y%m%d.%H%M")
+        fig_name = "1_by_2_poes_aur_bnd_" + IMF_turning + "_IMF_turning_" + fig_dtm_txt + ".png"
+        fig.savefig(fig_dir + fig_name, dpi=200, bbox_inches='tight')
+        plt.close(fig)
 
