@@ -38,9 +38,14 @@ def plot_superposed_aualae(ax, param="au", df_turn=None, stable_interval=30,
 
     dtms = pd.to_datetime(df_turn.datetime.unique())
     for dtm in dtms:
+        # Add the lag time
+        tmp_var = df_turn.loc[df_turn.datetime==dtm, :]
+        lag_time = tmp_var.lag_time.iloc[0]
+        dtm = dtm + dt.timedelta(seconds=60. * lag_time)
+
+        # load data to a dataframe
         stm = dtm - dt.timedelta(seconds=60. * stable_interval)
         etm = dtm + dt.timedelta(seconds=60. * stable_interval)
-        # load data to a dataframe
         command = "SELECT au, al, ae, datetime FROM {tb} " + \
                   "WHERE datetime BETWEEN '{stm}' AND '{etm}' "
         command = command.format(tb=table_name, stm=stm, etm=etm)
@@ -67,8 +72,8 @@ if __name__ == "__main__":
     ylim_au=[-50, 500]; ylim_al=[-500, 50] 
     ylim_ae = [-50, 800]
     ylims = [ylim_au, ylim_al, ylim_ae]
-    IMF_turning = "southward"
-    #IMF_turning = "northward"
+    #IMF_turning = "southward"
+    IMF_turning = "northward"
     event_status = "good"
     stable_interval=30
     df_events = build_event_database(IMF_turning=IMF_turning, event_status=event_status)
