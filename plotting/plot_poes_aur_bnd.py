@@ -10,7 +10,9 @@ from build_event_database import build_event_database
 
 def plot_poes_aur_bnd(selTime, ax, satList, raw_fdir="../data/poes/raw/",
 		      bnd_fdir="../data/poes/bnd/", read_bnd_from_file=True,
-		      coords = "mlt", plotCBar=True, cax=None, cbar_shrink=1.0, titleString=None):	
+                      remove_outliers=True, cutoff_iqr_prop=1.5,
+		      coords = "mlt", plotCBar=True, cax=None,
+                      cbar_shrink=1.0, titleString=None):	
 
     """Plot POES determined auroral boundary for a single event"""
 
@@ -38,6 +40,7 @@ def plot_poes_aur_bnd(selTime, ax, satList, raw_fdir="../data/poes/raw/",
             pass
     else:
 	poesPltObj.overlay_equ_bnd(selTime, m, ax, raw_fdir,
+                                   remove_outliers=remove_outliers, cutoff_iqr_prop=cutoff_iqr_prop,
 				   linewidth=1, linecolor="red", line_zorder=7)
 
     return
@@ -50,8 +53,11 @@ satList = ["m01", "m02", "n15", "n16", "n17", "n18", "n19"]
 if __name__ == "__main__":
 
     raw_fdir="../data/poes/raw/"
-    bnd_fdir="../data/poes/bnd/"
+    #bnd_fdir="../data/poes/bnd/"
+    bnd_fdir="../data/poes/bnd_tmp/"
     read_bnd_from_file=True
+    remove_outliers=True
+    cutoff_iqr_prop=1.5
     coords = "mlt"
     reltime_signs = [-1, 1]   # -1 indicates time before turning
     del_time = 30    # approximate relative time from the flow response time. Used to get the real relative time
@@ -62,15 +68,13 @@ if __name__ == "__main__":
     df_turn = build_event_database(IMF_turning=IMF_turning, event_status="good")
     imf_dtms = [x for x in pd.to_datetime(df_turn.datetime.unique())]
     #imf_dtms = [imf_dtms[0]] 
-    #imf_dtms = [dt.datetime(2015, 4, 9, 7, 30)]; lag_time = 0
     reltimes = []
     for imf_dtm in imf_dtms:
-        print(imf_dtm)
-
+        print("Plotting POES Auroral Boundary for " + str(imf_dtm))
         # Create a fig
         fig, axes = plt.subplots(nrows=1, ncols=2, figsize=(12,6))
-	fig.subplots_adjust(right=0.8)
-	cbar_ax = fig.add_axes([0.85, 0.30, 0.03, 0.4])
+	fig.subplots_adjust(right=0.82)
+	cbar_ax = fig.add_axes([0.85, 0.2, 0.02, 0.60])
 
         plotCBar_flags = [False, True]
 
@@ -81,21 +85,24 @@ if __name__ == "__main__":
 	for i, reltime_sign in enumerate(reltime_signs):
 	    ax = axes[i]
 	    # Find an appropriate datetime for POES
-	    poes_dtm = imf_dtm + dt.timedelta(seconds=60. * lag_time)
+	    sd_dtm = imf_dtm + dt.timedelta(seconds=60. * lag_time)
 	    if reltime_sign == -1:
-#		if (poes_dtm.minute % del_time) < 5:
-#		    reltime = (-1) * (del_time + poes_dtm.minute % del_time)
+#		if (sd_dtm.minute % del_time) < 5:
+#		    reltime = (-1) * (del_time + sd_dtm.minute % del_time)
 #		else:
-#		    reltime = (-1) * (del_time - poes_dtm.minute % del_time)
-                reltime = (-1) * (poes_dtm.minute % del_time)
+#		    reltime = (-1) * (del_time - sd_dtm.minute % del_time)
+		if (sd_dtm.minute % del_time) == 0:
+                    reltime = (-1) * del_time
+                else:
+                    reltime = (-1) * (sd_dtm.minute % del_time)
 	    elif reltime_sign == 1:
-#		if (poes_dtm.minute % del_time) < 5:
-#		    reltime = del_time - poes_dtm.minute % del_time 
+#		if (sd_dtm.minute % del_time) < 5:
+#		    reltime = del_time - sd_dtm.minute % del_time 
 #		else:
-#		    reltime = del_time + (del_time - poes_dtm.minute % del_time)
-                reltime = del_time - (poes_dtm.minute % del_time)
+#		    reltime = del_time + (del_time - sd_dtm.minute % del_time)
+                reltime = del_time - (sd_dtm.minute % del_time)
             reltimes.append(reltime)
-	    poes_dtm = poes_dtm + dt.timedelta(seconds=60. * reltime)
+	    poes_dtm = sd_dtm + dt.timedelta(seconds=60. * reltime)
 
 	    # Make a title
 	    title_str = poes_dtm.strftime("%Y-%m-%d  %H:%M") + " UT"
@@ -104,10 +111,15 @@ if __name__ == "__main__":
             #satList = satList_dict[imf_dtm]["satList"]
 	    plot_poes_aur_bnd(poes_dtm, ax, satList, read_bnd_from_file=read_bnd_from_file, titleString=title_str,
 			      raw_fdir=raw_fdir, bnd_fdir=bnd_fdir, plotCBar=plotCBar_flags[i], cax=cbar_ax,
+                              remove_outliers=remove_outliers, cutoff_iqr_prop=cutoff_iqr_prop,
 			      coords=coords , cbar_shrink=cbar_shrink)
 
+        # Put a figure title
+        fig_title = "IMF " + IMF_turning.capitalize() + " Turning " + sd_dtm.strftime("%Y-%m-%d  %H:%M") + " UT"
+        fig.suptitle(fig_title, y=0.93, fontsize=15)
+
         # Save figure
-        fig_dir = "../plots/poes_aur_bnd/"
+        fig_dir = "../plots/poes_aur_bnd/tmp/"
         #fig_dtm_txt = imf_dtm.strftime("%Y%m%d.%H%M") + "_reltime_" + str(reltime)
         #fig_name = "poes_aur_bnd_" + IMF_turning + "_IMF_turning_" + fig_dtm_txt + ".png"
         fig_dtm_txt = imf_dtm.strftime("%Y%m%d.%H%M")
