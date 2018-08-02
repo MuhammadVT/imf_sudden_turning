@@ -30,29 +30,29 @@ def create_event_list(IMF_events=True, AUAL_events=False,
                       (dt.datetime(2015, 4, 20, 9, 40),  180, 10,  "yes"),    
                       (dt.datetime(2015, 6, 26, 7, 44),  180, 10,  "yes"),    
                       (dt.datetime(2015, 8, 23, 6, 6),   180, 10,  "yes"),    
-                      (dt.datetime(2015, 9, 10, 7, 50),  180, 10,  "yes"),   # NO DATA 
+                      (dt.datetime(2015, 9, 10, 7, 50),  180, 10,  "yes"),   
                       (dt.datetime(2013, 2, 21, 6, 10),  180, 10,  "no"),   # Weak southward turning
                       (dt.datetime(2013, 5, 19, 5, 17),  180, 10,  "no"),   # Flow response is not clear
-                      (dt.datetime(2014, 2, 3, 07, 20),  180, 10,  "no"),   # Very nice southward turning but no flow response
+                      (dt.datetime(2014, 2, 3, 07, 20),  180, 10,  "no"),   # Very nice southward turning but no good radar data
                       (dt.datetime(2014, 3, 25, 9, 7),   180, 10,  "no"),
                       (dt.datetime(2015, 1, 3, 10, 17),  180, 16,  "no"),    # Strong southward turning but no clear flow response
-                      (dt.datetime(2013, 2, 21, 5, 34),  0,   17,  "yes",  ["bks", "fhe", "fhw", "cve", "cvw"], [-30, 30, -30, 30, -30]),    # response time varies at different MLT
+                      (dt.datetime(2013, 2, 21, 5, 34),  0,   10,  "yes",  ["bks", "fhe", "fhw", "cve", "cvw"], [-30, 30, -30, 30, -30]),    # response time varies at different MLT
                       (dt.datetime(2013, 11, 16, 7, 49), 0,   10,  "yes",  ["bks", "fhe", "fhw", "cve", "cvw"], [-30, 30, -30, 30, -30]),     # response time varies at different MLT, SAIS disappears near 20 MLT seen by ade, adw
-                      (dt.datetime(2014, 1, 1, 8, 0),    0,   10,  "yes"), 
-                      (dt.datetime(2014, 1, 3, 9, 28),   0,   10,  "yes"),   # Only BKS has good data
-                      (dt.datetime(2014, 3, 1, 9, 20),   0,   10,  "yes"),   # Overshielding observed in FHE
-                      (dt.datetime(2014, 12, 16, 14, 2), 0,   10,  "yes"),
-                      (dt.datetime(2015, 1, 26, 10, 8),  0,   10,  "yes"),   # CVW
-                      (dt.datetime(2015, 2, 1, 9, 51),   0,   10,  "yes"),   # FHE, FHW 
-                      (dt.datetime(2015, 3, 16, 6, 49),  0,   10,  "yes"),   # Good one
-                      (dt.datetime(2015, 3, 28, 7, 46),  0,   10,  "yes"),   
-                      (dt.datetime(2015, 3, 29, 10, 22), 0,   10,  "yes"),   # Good one 
-                      (dt.datetime(2015, 4, 10, 8, 39),  0,   10,  "yes"),   # BKS
-                      (dt.datetime(2015, 4, 20, 10, 13), 0,   10,  "yes"),   
-                      (dt.datetime(2015, 5, 10, 13, 17), 0,   10,  "yes"),   # ADW, ADE (los vel direction is the opposite to what is expected)
-                      (dt.datetime(2015, 5, 19, 2, 32),  0,   10,  "yes"),   # BKS, WAL (good example for oversheilding in the premidnight sector)
-                      (dt.datetime(2015, 6, 30, 5, 43),  0,   10,  "yes"),   
-                      (dt.datetime(2015, 7, 28, 12, 38), 0,   10,  "yes"),   # ADW, ADE (los vel direction is the opposite to what is expected)
+                      (dt.datetime(2014, 1, 3, 9, 28),   0,   10,  "yes",  ["bks"],  [-30]),    # and poleward-looking beams of cvw and ade. Response in bks is not very clear 
+                      (dt.datetime(2014, 3, 1, 9, 20),   0,   20,  "yes",  ["bks", "fhe", "fhw", "cve"],  [-30, 30, -30, 30]),   # High-midlat flows co-exist, no overshielding signatures in ade, adw data in premidnight
+                      (dt.datetime(2014, 12, 16, 14, 2), 0,   10,  "yes",  ["cve", "ade", "adw"],  [30, 30, -30]),    # cvw has good data but no clear flow response
+                      (dt.datetime(2015, 1, 26, 10, 8),  0,   10,  "yes",  ["bks", "fhe", "fhw", "cve", "cvw"], [-30, 30, -30, 5, -30]),   # Reverse (undershielding) response in fhe. No response in ade, adw though they have data
+                      (dt.datetime(2015, 2, 1, 9, 51),   0,   15,  "yes",  ["bks", "fhe", "fhw", "cve", "cvw"],  [-30, 5, -30, 5, -5]),
+                      (dt.datetime(2015, 3, 16, 6, 49),  0,   7,   "yes",  ["wal", "bks", "fhe", "fhw", "cve", "cvw"],  [30, -20, 30, -30, 30, -30]),   # NOTE: Good one but disturbed time. NEEDS SPECIAL STUDY 
+                      (dt.datetime(2015, 3, 28, 7, 46),  0,   10,  "yes"),   # NOTE: Good one but disturbed time. NEEDS SPECIAL STUDY 
+                      (dt.datetime(2015, 3, 29, 10, 22), 0,   10,  "yes",  ["bks", "fhe", "fhw", "ade"],  [-30, 30, -30, 30]),   # Good one, cve and adw has data but repsonse not clear 
+                      (dt.datetime(2015, 4, 10, 8, 39),  0,   10,  "yes",  ["wal", "bks", "cve"],  [30, -30, 5]),
+                      (dt.datetime(2015, 4, 20, 10, 13), 0,   10,  "yes",  ["fhw", "cve", "cvw"],  [-30, 30, -30]),  # Weak northward turning 
+                      (dt.datetime(2015, 5, 10, 13, 17), 0,   10,  "yes",  ["ade", "adw"],  [30, -30]),   # ADW, ADE (los vel direction is the opposite to what is expected)
+                      (dt.datetime(2015, 5, 19, 2, 32),  0,   10,  "yes",  ["wal", "bks"],  [30, -30]),   # BKS, WAL (WAL is a good example for oversheilding in the premidnight sector, however BKS and WAL do not agree in expected signs)
+                      (dt.datetime(2015, 6, 30, 5, 43),  0,   10,  "yes",  ["cve", "cvw"],  [30, -30]),   # Weak northward turning
+                      (dt.datetime(2015, 7, 28, 12, 38), 0,   10,  "yes",  ["ade", "adw"],  [30, -30]),   # Lag time does not make sense
+                      (dt.datetime(2014, 1, 1, 8, 0),    0,   10,  "no"), 
                       (dt.datetime(2015, 2, 8, 8, 5),    0,   10,  "no"),    
                       (dt.datetime(2015, 6, 3, 10, 48),  0,   10,  "no"),
                       (dt.datetime(2015, 7, 9, 4, 57),   0,   10,  "no")]

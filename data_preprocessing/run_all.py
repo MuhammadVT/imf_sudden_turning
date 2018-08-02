@@ -363,8 +363,22 @@ if __name__ == "__main__":
     #turn_dtms = [dt.datetime(2012, 1, 9, 10, 25)]
     #turn_dtms = [dt.datetime(2012, 1, 18, 10, 51)]
     #turn_dtms = [dt.datetime(2012, 2, 1, 5, 12)]
-    turn_dtms = [dt.datetime(2012, 2, 6, 13, 53)]
-    
+    #turn_dtms = [dt.datetime(2012, 2, 6, 13, 53)]
+    #turn_dtms = [dt.datetime(2012, 1, 26, 13, 12)]
+    #turn_dtms = [dt.datetime(2012, 1, 26, 9, 54)]
+    #turn_dtms = [dt.datetime(2012, 2, 1, 6, 2)]
+    #turn_dtms = [dt.datetime(2012, 2, 4, 12, 54)] 
+    #turn_dtms = [dt.datetime(2012, 2, 29, 7, 17)] 
+    #turn_dtms = [dt.datetime(2012, 3, 2, 9, 9)] 
+    #turn_dtms = [dt.datetime(2011, 11, 8, 11, 23)]
+    #turn_dtms = [dt.datetime(2011, 11, 11, 9, 39)]
+    #turn_dtms = [dt.datetime(2011, 11, 30, 9, 2)]
+    #turn_dtms = [dt.datetime(2011, 12, 3, 6, 38)]
+    #turn_dtms = [dt.datetime(2014, 3, 1, 9, 19)]
+    #turn_dtms = [dt.datetime(2014, 3, 25, 9, 7)]
+    #turn_dtms = [dt.datetime(2014, 10, 26, 7, 2)] 
+    #turn_dtms = [dt.datetime(2014, 10, 27, 4, 50)]
+    turn_dtms = [dt.datetime(2014, 10, 20, 7, 55)] 
     
 
     lag_times = [20] * len(turn_dtms)

@@ -456,6 +456,8 @@ def main(master_table=True, superposed_master_table=False, master_summary_table=
     #IMF_turning = "southward"
     event_status = "good"
     output_table = "master_superposed_epoch_" + IMF_turning
+    imf_lagtime = 15
+    half_interval_length = 60
 
     # create a log file to which any error occured will be written.
     logging.basicConfig(filename="./log_files/superposed_master_table" + ".log",
@@ -472,8 +474,8 @@ def main(master_table=True, superposed_master_table=False, master_summary_table=
 
     if superposed_master_table:
         df_events = build_event_database(IMF_turning=IMF_turning, event_status=event_status)
-        build_superposed_master_table(output_table, df_events=df_events, half_interval_length=75,
-                                      imf_lagtime=15, ftype=ftype, coords=coords,
+        build_superposed_master_table(output_table, df_events=df_events, half_interval_length=half_interval_length,
+                                      imf_lagtime=imf_lagtime, ftype=ftype, coords=coords,
                                       dbdir=dbdir, input_dbname=None, output_dbname=None)
 
 
