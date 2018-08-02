@@ -201,7 +201,7 @@ if __name__ == "__main__":
     fig.suptitle(fig_title, y=1.05, fontsize=15)
 
     #fig_dir = "/home/muhammad/Dropbox/tmp/tmp/"
-    fig_dir = "../plots/poes_aur_bnd/"
+    fig_dir = "../plots/poes_aur_bnd/tmp/"
     fig_name = "superposed_poes_aur_bnd_" + plot_type + "_" + str(nevents) + "_" + IMF_turning + "_turnings_IMF"
     fig.savefig(fig_dir + fig_name + ".png", dpi=500, bbox_inches="tight")
 

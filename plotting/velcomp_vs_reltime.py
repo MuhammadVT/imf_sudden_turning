@@ -137,7 +137,7 @@ def fetch_data(input_table, lat_range=[53, 59], nvel_min=3,
     return data_dict
 
 def vel_vs_reltime(ax, data_dict, veldir="zonal", sampling_method="median",
-                   glatc_list=None, title="xxx", add_err_bar=False,
+                   glatc_list=None, title="xxx", add_err_bar=False, lat_avg=False,
                    color_list=None, marker_size=2, marker_type="o"):
 
     """ plots flow components vs relative times
@@ -176,29 +176,51 @@ def vel_vs_reltime(ax, data_dict, veldir="zonal", sampling_method="median",
     # MLATs
     if glatc_list is None:
         glatc_list = np.array([55.5])
-    for jj, mlat in enumerate(glatc_list):
-        vel_comp_jj = np.array([vel_comp[i] for i in range(len(vel_comp)) if data_dict['glatc'][i] == mlat])
-        vel_reltime_jj = np.array([vel_reltime[i] for i in range(len(vel_comp)) if data_dict['glatc'][i] == mlat])
-        vel_comp_err_jj = np.array([vel_comp_err[i] for i in range(len(vel_comp_err)) if data_dict['glatc'][i] == mlat])
-
+    if lat_avg:
         xs = []
         ys = []
-        for reltm in np.unique(vel_reltime_jj):
+        for reltm in np.unique(vel_reltime):
             xs.append(reltm)
             if sampling_method == "median":
                 # Do median filter
-                ys.append(np.median(vel_comp_jj[np.where(vel_reltime_jj == reltm)]))
+                ys.append(np.median(vel_comp[np.where(vel_reltime == reltm)]))
             if sampling_method == "mean":
-                ys.append(np.mean(vel_comp_jj[np.where(vel_reltime_jj == reltm)]))
+                ys.append(np.mean(vel_comp[np.where(vel_reltime == reltm)]))
 
         # plot the velocities for each MLAT
-        ax.plot(xs, ys, color=color_list[jj],
-                marker=marker_type, ms=marker_size, linewidth=2.0, label=str(mlat))
+        ax.plot(xs, ys, color="k",
+                marker=marker_type, ms=marker_size, linewidth=2.0)
 
         if add_err_bar:
-            ax.errorbar(vel_reltime_jj, vel_comp_jj, yerr=vel_comp_err_jj, mfc=color_list[jj],
+            ax.errorbar(vel_reltime, vel_comp, yerr=vel_comp_err, mfc="k",
                     #marker='o', s=3, linewidths=.5, edgecolors='face', label=str(int(mlat)))
-                    fmt=marker_type, ms=marker_size, elinewidth=.5, mec=color_list[jj], ecolor="k")
+                    fmt=marker_type, ms=marker_size, elinewidth=.5, mec="k", ecolor="k")
+
+    else:
+        for jj, mlat in enumerate(glatc_list):
+            vel_comp_jj = np.array([vel_comp[i] for i in range(len(vel_comp)) if data_dict['glatc'][i] == mlat])
+            vel_reltime_jj = np.array([vel_reltime[i] for i in range(len(vel_comp)) if data_dict['glatc'][i] == mlat])
+            vel_comp_err_jj = np.array([vel_comp_err[i] for i in range(len(vel_comp_err)) if data_dict['glatc'][i] == mlat])
+
+            xs = []
+            ys = []
+            for reltm in np.unique(vel_reltime_jj):
+                xs.append(reltm)
+                if sampling_method == "median":
+                    # Do median filter
+                    ys.append(np.median(vel_comp_jj[np.where(vel_reltime_jj == reltm)]))
+                if sampling_method == "mean":
+                    ys.append(np.mean(vel_comp_jj[np.where(vel_reltime_jj == reltm)]))
+
+            # plot the velocities for each MLAT
+            ax.plot(xs, ys, color=color_list[jj],
+                    marker=marker_type, ms=marker_size, linewidth=2.0, label=str(mlat))
+
+            if add_err_bar:
+                ax.errorbar(vel_reltime_jj, vel_comp_jj, yerr=vel_comp_err_jj, mfc=color_list[jj],
+                        #marker='o', s=3, linewidths=.5, edgecolors='face', label=str(int(mlat)))
+                        fmt=marker_type, ms=marker_size, elinewidth=.5, mec=color_list[jj], ecolor="k")
+
 
     # add text
     ax.set_title(title, fontsize="small")
@@ -232,12 +254,14 @@ if __name__ == "__main__":
 
     # input parameters
     nvel_min=20
-    lat_range=[54, 59]
+    #lat_range=[54, 59]
+    lat_range=[54, 58]
+    lat_avg = True
     lat_min = 50
     reltime_resolution=2
     mlt_width=2.
     gazmc_span_minlim=30
-    vel_mag_err_maxlim=0.5
+    vel_mag_err_maxlim=0.2
     vel_mag_maxlim=200.
     fit_by_bmazm=False
     fit_by_losvel_azm=True
@@ -247,8 +271,9 @@ if __name__ == "__main__":
     weighting = "std"
     sampling_method="median"
     dbdir="../data/sqlite3/"
-    IMF_turning = "northward"
-    #IMF_turning = "southward"
+    #IMF_turning = "northward"
+    IMF_turning = "southward"
+    add_err_bar = False
 
     input_table = "master_cosfit_superposed_" + IMF_turning + "_mltwidth_" + str(int(mlt_width)) +\
                    "_res_" + str(reltime_resolution) + "min"
@@ -280,23 +305,28 @@ if __name__ == "__main__":
 
 
     #veldir_list = ["zonal", "zonal", "zonal", "meridional", "zonal", "zonal"]
-    #vel_dir = "zonal"
-    vel_dir = "meridional"
-    veldir_list = [vel_dir] * len(mlt_ranges)
+    veldir = "zonal"
+    #veldir = "meridional"
+    veldir_list = [veldir] * len(mlt_ranges)
 
-    if vel_dir == "zonal":
+    if veldir == "zonal":
 #        ylim_list = [[-180, 180], [-180, 180], [-100, 100],
 #                     [-100, 100],
 #                     [-100, 100], [-100, 100], [-100, 100]]
-        ylim_list = [[-180, 180], [-180, 180], [-180, 180],
-                     [-100, 100], [-100, 100], [-100, 100],
-                     [-100, 100], [-100, 100], [-100, 100]]
+        if lat_avg:
+            ylim_list = [[-160, 20], [-160, 20], [-160, 20],
+                         [-80, 40], [-80, 40], [-80, 40],
+                         [-80, 40], [-80, 40], [-80, 40]]
+        else:
+            ylim_list = [[-180, 180], [-180, 180], [-180, 180],
+                         [-100, 100], [-100, 100], [-100, 100],
+                         [-100, 100], [-100, 100], [-100, 100]]
 
     else:
-        ylim_list = [[-80, 80]]  * len(mlt_ranges)
+        #ylim_list = [[-80, 80]]  * len(mlt_ranges)
+        ylim_list = [[-40, 40]]  * len(mlt_ranges)
 
 
-    add_err_bar = False
     glatc_list = np.arange(lat_range[1], lat_range[0], -1) - 0.5 
 
     fig, axes = plt.subplots(nrows=len(mlt_ranges), ncols=1, sharex=True, figsize=(6, 15))
@@ -321,7 +351,7 @@ if __name__ == "__main__":
             title = "Velocity Magnitude, MLT = " + str(round(center_mlt))
         else:
             title = veldir[0].upper()+veldir[1:] + " Velocities, MLT = " + str(round(center_mlt))
-        vel_vs_reltime(ax, data_dict, veldir=veldir, sampling_method=sampling_method, 
+        vel_vs_reltime(ax, data_dict, veldir=veldir, sampling_method=sampling_method, lat_avg=lat_avg,
                        glatc_list=glatc_list, title=title, add_err_bar=add_err_bar)
         ax.yaxis.set_major_locator(MultipleLocator(base=40))
 
@@ -335,9 +365,13 @@ if __name__ == "__main__":
     axes[-1].xaxis.set_major_locator(MultipleLocator(base=5))
 
     # save the fig
-    fig_dir = "/home/muhammad/Dropbox/tmp/convection/tmp/"
+    fig_dir = "/home/muhammad/Dropbox/tmp/velcomp_vs_reltime/"
     #fig_name = "line_plot"
-    fig_name = "line_plot_" + vel_dir + "_" + IMF_turning + "_lat" + str(lat_range[0]) +\
+    if lat_avg:
+        tmp_txt = "_lat_avg"
+    else:
+        tmp_txt = ""
+    fig_name = veldir + "_" + IMF_turning + tmp_txt + "_lat" + str(lat_range[0]) +\
                "_to_lat" + str(lat_range[1]) +\
                "_mltwidth_" + str(int(mlt_width)) +\
                "_res_" + str(reltime_resolution) + "min" + \

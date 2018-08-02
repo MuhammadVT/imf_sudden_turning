@@ -34,9 +34,15 @@ def plot_superposed_symh(ax, df_turn=None, stable_interval=30,
 
     dtms = pd.to_datetime(df_turn.datetime.unique())
     for dtm in dtms:
+
+        # Add the lag time
+        tmp_var = df_turn.loc[df_turn.datetime==dtm, :]
+        lag_time = tmp_var.lag_time.iloc[0]
+        dtm = dtm + dt.timedelta(seconds=60. * lag_time)
+
+        # load data to a dataframe
         stm = dtm - dt.timedelta(seconds=60. * stable_interval)
         etm = dtm + dt.timedelta(seconds=60. * stable_interval)
-        # load data to a dataframe
         command = "SELECT symh, datetime FROM {tb} " + \
                   "WHERE datetime BETWEEN '{stm}' AND '{etm}' "
         command = command.format(tb=table_name, stm=stm, etm=etm)
@@ -53,7 +59,7 @@ def plot_superposed_symh(ax, df_turn=None, stable_interval=30,
 if __name__ == "__main__":
 
 
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(6,3))
     IMF_turning = "southward"
     #IMF_turning = "northward"
     event_status = "good"
@@ -68,8 +74,8 @@ if __name__ == "__main__":
     ax.set_ylabel("SymH [nT]")
     ax.set_title(str(nevents) + " " + IMF_turning.capitalize() + " IMF Turnings")
 
-    #fig_dir = "/home/muhammad/Dropbox/tmp/tmp/"
-    fig_dir = "../plots/superposed_symh/"
+    fig_dir = "/home/muhammad/Dropbox/tmp/tmp/"
+    #fig_dir = "../plots/superposed_symh/"
     fig_name = "symh_for_" + str(nevents) + "_" + IMF_turning + "_turnings_IMF"
 
     fig.savefig(fig_dir + fig_name + ".png", bbox_inches="tight")

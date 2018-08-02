@@ -284,47 +284,37 @@ if __name__ == "__main__":
     #lag_time=15
 
     # IMF Northward Turning:
-    #event_dtms = [dt.datetime(2015, 11, 16, 6, 4)]    # Response not clear
-    #event_dtms = [dt.datetime(2015, 12, 3, 14, 14)]   # not tested
-    #event_dtms = [dt.datetime(2015, 12, 7, 7, 58)]    # not tested
-    #event_dtms = [dt.datetime(2015, 12, 22, 11, 36)]  # Need rethinking 
-    #event_dtms = [dt.datetime(2013, 11, 11, 14, 13)]  # Response not clear
-    #event_dtms = [dt.datetime(2012, 11, 20, 8, 46)]   # Needs a relook
 
+
+#################################
     # New events: Northward
-    #event_dtms = [dt.datetime(2012, 12, 14, 3, 47)]   # Done
-    #event_dtms = [dt.datetime(2012, 1, 9, 10, 25)]    # Done
-    #event_dtms = [dt.datetime(2012, 1, 18, 10, 51)]   # Done
-    #event_dtms = [dt.datetime(2012, 2, 1, 5, 12)]     # Done
-    #event_dtms = [dt.datetime(2012, 1, 26, 9, 54)]  # relatively small jump
-    #event_dtms = [dt.datetime(2012, 1, 27, 7, 53)]  # relatively small and slow turning
+    #event_dtms = [dt.datetime(2014, 3, 27, 13, 28)]   # Not been looked at yet 
+    #event_dtms = [dt.datetime(2014, 10, 25, 13, 7)]   # Not been looked at yet 
+    #event_dtms = [dt.datetime(2014, 10, 26, 7, 2)]   # nice turning but hard to find any flow response time
+    #event_dtms = [dt.datetime(2014, 10, 27, 4, 50)]   # nice turning but hard to find any flow response time 
+    #event_dtms = [dt.datetime(2014, 10, 28, 9, 0)]   # Not been looked at yet, seems to be an ok one but has some gap in IMF data 
+    #event_dtms = [dt.datetime(2011, 12, 24, 10, 9)]   # Nice but small (-2 to 4 nT)
+    #event_dtms = [dt.datetime(2012, 1, 27, 7, 53)]   # relatively small and slow turning, during relatively disturbed time
     #event_dtms = [dt.datetime(2012, 2, 7, 11, 1)]   # With oscillation and is during disturbed time
 
     # New events: Southward
-    #event_dtms = [dt.datetime(2012, 1, 26, 13, 12)]
-    #event_dtms = [dt.datetime(2012, 2, 1, 6, 2)] 
-    #event_dtms = [dt.datetime(2012, 2, 4, 12, 54)]  # large oscillation before turning  
-    #event_dtms = [dt.datetime(2012, 2, 6, 6, 0)]  # very slow turning   
-    event_dtms = [dt.datetime(2012, 2, 6, 13, 53)]  # good flow response
+    #event_dtms = [dt.datetime(2013, 10, 1, 13, 36)]   # take a look if you have time
+    event_dtms = [dt.datetime(2014, 10, 20, 7, 55)]   # Not been looked at yet, seems to have good flow response
+    #event_dtms = [dt.datetime(2014, 10, 1, 8, 37)]   # Not been looked at yet, seems to have good flow response
+    #event_dtms = [dt.datetime(2014, 10, 4, 8, 7)]   # Not been looked at yet, seems to have good flow response. Still Bz>0 after sourthward turning
+    #event_dtms = [dt.datetime(2012, 3, 2, 9, 9)]     # relatively small but clean southward turning, Not clear flow response
+#################################
     
     #event_dtms = [dt.datetime(2013, 2, 7, 14, 24)]
-    #event_dtms = [dt.datetime(2013, 2, 20, 3, 45)]
+    #event_dtms = [dt.datetime(2013, 2, 20, 3, 45)]    # Very nice northward turning, clear flow response in cve and cvw but mixed with ground scatter
 
     # IMF Southward Turning:
-    #event_dtms = [dt.datetime(2015, 2, 23, 5, 36)]    # Need to look at fitvel for this event 
     #event_dtms = [dt.datetime(2015, 2, 23, 8, 17)]    # Needs more thinking 
-    #event_dtms = [dt.datetime(2014, 12, 7, 10, 5)]    # Need more thinking
-    #event_dtms = [dt.datetime(2014, 2, 28, 7, 26)]    # needs more thinking
 
-    #event_dtms = [dt.datetime(2016, 2, 13, 5, 30)]    
-    #event_dtms = [dt.datetime(2014, 3, 1, 10, 0)]
-    #event_dtms = [dt.datetime(2012, 11, 21, 3, 43)]
+    #event_dtms = [dt.datetime(2012, 11, 21, 3, 43)]  # Nice southward turning but hard to see any indication of a flow response
     #event_dtms = [dt.datetime(2015, 11, 18, 13, 50)]     
-    #event_dtms = [dt.datetime(2015, 12, 7, 7, 40)]     
     #event_dtms = [dt.datetime(2016, 1, 17, 11, 6)]    # Need to look at fitvel for this event
     #event_dtms = [dt.datetime(2015, 12, 5, 14, 55)]     
-    #event_dtms = [dt.datetime(2015, 3, 28, 5, 2)]     
-    #event_dtms = [dt.datetime(2015, 3, 29, 9, 49)]     
 #    rads_list = [["adw", "ade", "cvw", "cve"], ["fhw", "fhe", "bks", "wal"]]
 #    bmnums_lst = [[[1, 13, 17, 21], [1, 7, 11, 21],  [1, 13, 17, 23], [1, 7, 11, 23]],
 #                  [[1, 13, 17, 21], [1, 7, 11, 21],  [1, 13, 17, 23], [1, 7, 11, 19]]]
@@ -337,7 +327,7 @@ if __name__ == "__main__":
     #bmnums_lst = [[range(0, 12, 1)]]
     #bmnums_lst = [[range(9, 21, 1)]]
 
-    lag_time=8
+    lag_time=10
 
     fig_dir = "/home/muhammad/Dropbox/tmp/tmp/"
     #fig_dir = "../plots/rti_stackplot/" + IMF_turning + "/"

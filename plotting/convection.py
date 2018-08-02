@@ -4,6 +4,9 @@ import sqlite3
 import datetime as dt
 import numpy as np 
 import logging
+import sys
+sys.path.append("../data/")
+from build_event_database import build_event_database
 
 def fetch_data(input_table, lat_range=[52, 59], nvel_min=3, relative_time=-30,
                reltime_resolution=2, mlt_width=1.,
@@ -284,7 +287,7 @@ def main():
     mlt_width=2.
     mlt_range=[-6, 6]
     gazmc_span_minlim=30
-    vel_mag_err_maxlim=0.1
+    vel_mag_err_maxlim=0.2
     vel_mag_maxlim=200.
     fit_by_bmazm=False     # Not implemented yet
     fit_by_losvel_azm=True
@@ -293,7 +296,8 @@ def main():
     #weighting = None 
     weighting = "std"
     dbdir="../data/sqlite3/"
-    IMF_turning = "southward"
+    #IMF_turning = "southward"
+    IMF_turning = "northward"
 
     input_table = "master_cosfit_superposed_" + IMF_turning + "_mltwidth_" + str(int(mlt_width)) +\
                    "_res_" + str(reltime_resolution) + "min"
@@ -350,6 +354,13 @@ def main():
     fig.subplots_adjust(right=0.85)
     cbar_ax = fig.add_axes([0.90, 0.25, 0.02, 0.5])
     add_cbar(fig, coll, bounds, cax=cbar_ax, label="Speed [m/s]")
+
+    # Set a figure title
+    df_turn = build_event_database(IMF_turning=IMF_turning, event_status="good")
+    nevents = len(df_turn.datetime.unique())
+    fig_title = str(nevents) + " IMF " + IMF_turning.capitalize() + " Turning Events"
+    fig.suptitle(fig_title, y=0.90, fontsize=15)
+
     # save the fig
     fig.savefig(fig_dir + fig_name + ".png", dpi=300, bbox_inches="tight")
     plt.close(fig)

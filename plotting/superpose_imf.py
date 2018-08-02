@@ -55,9 +55,9 @@ if __name__ == "__main__":
 
 
     fig, ax = plt.subplots()
-    imf_comp = "Bz"
-    #IMF_turning = "southward"
-    IMF_turning = "northward"
+    imf_comp = "By"
+    IMF_turning = "southward"
+    #IMF_turning = "northward"
     event_status = "good"
     stable_interval=30
     df_events = build_event_database(IMF_turning=IMF_turning, event_status=event_status)

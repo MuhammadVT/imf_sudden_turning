@@ -60,7 +60,7 @@ def plot_superposed_aualae(ax, param="au", df_turn=None, stable_interval=30,
     # Add label
 #    ax.annotate(param.upper(), xytext=(0.9, 0.9),
 #                color=color_dict[param.upper()], textcoords="axes fraction")
-    xy_dict = {"AU":(0.7, 0.7),"AL":(0.25, 0.25), "AE":(0.7, 0.8)}
+    xy_dict = {"AU":(0.85, 0.7),"AL":(0.85, 0.25), "AE":(0.85, 0.8)}
     ax.annotate(param.upper(), xy=xy_dict[param.upper()], color=color_dict[param.upper()],
                 xycoords="axes fraction", fontsize=15)
 
@@ -72,8 +72,8 @@ if __name__ == "__main__":
     ylim_au=[-50, 500]; ylim_al=[-500, 50] 
     ylim_ae = [-50, 800]
     ylims = [ylim_au, ylim_al, ylim_ae]
-    #IMF_turning = "southward"
-    IMF_turning = "northward"
+    IMF_turning = "southward"
+    #IMF_turning = "northward"
     event_status = "good"
     stable_interval=30
     df_events = build_event_database(IMF_turning=IMF_turning, event_status=event_status)
@@ -91,8 +91,8 @@ if __name__ == "__main__":
     axes[0].set_title(str(nevents) + " " + IMF_turning.capitalize() + " IMF Turnings")
     axes[-1].set_xlabel("Time [min]")
 
-    #fig_dir = "/home/muhammad/Dropbox/tmp/tmp/"
-    fig_dir = "../plots/superposed_aualae/"
+    fig_dir = "/home/muhammad/Dropbox/tmp/tmp/"
+    #fig_dir = "../plots/superposed_aualae/"
     fig_name = "AUALAE_for_" + str(nevents) + "_" + IMF_turning + "_turnings_IMF" 
     fig.savefig(fig_dir + fig_name + ".png", bbox_inches="tight")
     plt.close(fig)
