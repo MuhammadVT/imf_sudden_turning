@@ -1,3 +1,5 @@
+import matplotlib
+matplotlib.use("Agg")
 import numpy as np
 import matplotlib.pyplot as plt
 import sqlite3
@@ -30,8 +32,6 @@ def fetch_data(input_table, lat_range=[53, 59], nvel_min=3,
         The range of relative time of interest
     reltime_resolution : int
         The time resolution (in minutes) of the fitted data
-        e.g.,  for start_reltime=-30 and reltime_resolution=2, the relative time range
-        for a cos-fitting procedure would be [-30, -29]
     mlt_range : list
         The MLT range of interest
     mlt_width : float
@@ -136,7 +136,8 @@ def fetch_data(input_table, lat_range=[53, 59], nvel_min=3,
 
     return data_dict
 
-def vel_vs_reltime(ax, data_dict, veldir="zonal", sampling_method="median",
+def vel_vs_reltime(ax, data_dict, mlt_range=[-3.2, -2.8], IMF_turning="southward",
+                   veldir="zonal", sampling_method="median",
                    glatc_list=None, title="xxx", add_err_bar=False, lat_avg=False,
                    color_list=None, marker_size=2, marker_type="o"):
 
@@ -180,12 +181,18 @@ def vel_vs_reltime(ax, data_dict, veldir="zonal", sampling_method="median",
         xs = []
         ys = []
         for reltm in np.unique(vel_reltime):
+            # NOTE: Do moving average to smoothen the curve
+            if (reltm >= -2) and (reltm <= 5):
+                #vel_tmp = vel_comp[np.where(vel_reltime == reltm)]
+                vel_tmp = vel_comp[np.where((vel_reltime >= reltm-1) & (vel_reltime <= reltm+1))]
+            else:
+                vel_tmp = vel_comp[np.where((vel_reltime >= reltm-2) & (vel_reltime <= reltm+2))]
+
             xs.append(reltm)
             if sampling_method == "median":
-                # Do median filter
-                ys.append(np.median(vel_comp[np.where(vel_reltime == reltm)]))
+                ys.append(np.median(vel_tmp))
             if sampling_method == "mean":
-                ys.append(np.mean(vel_comp[np.where(vel_reltime == reltm)]))
+                ys.append(np.mean(vel_tmp))
 
         # plot the velocities for each MLAT
         ax.plot(xs, ys, color="k",
@@ -205,14 +212,49 @@ def vel_vs_reltime(ax, data_dict, veldir="zonal", sampling_method="median",
             xs = []
             ys = []
             for reltm in np.unique(vel_reltime_jj):
-                xs.append(reltm)
+                #NOTE: Do moving average to smoothen the curve
+                if IMF_turning=="southward":
+                    reltm_minlim = -2; reltm_maxlim = 4
+                else:
+                    reltm_minlim = -2; reltm_maxlim = 3
+                if (reltm >= reltm_minlim) and (reltm <= reltm_maxlim):
+                    #vel_tmp = vel_comp_jj[np.where(vel_reltime_jj == reltm)]
+                    if IMF_turning=="southward":
+                        vel_tmp = vel_comp_jj[np.where((vel_reltime_jj >= reltm-1) & (vel_reltime_jj <= reltm+1))]
+                    else:
+                        vel_tmp = vel_comp_jj[np.where((vel_reltime_jj >= reltm-1) & (vel_reltime_jj <= reltm+1))]
+                else:
+                    if mlat == 55.5: 
+                        vel_tmp = vel_comp_jj[np.where((vel_reltime_jj >= reltm-4) & (vel_reltime_jj <= reltm+4))]
+                    else:
+                        vel_tmp = vel_comp_jj[np.where((vel_reltime_jj >= reltm-4) & (vel_reltime_jj <= reltm+4))]
+
+                if sum(mlt_range) <= 2:
+                    # NOTE: Remove errors by filtering out eastward flows before MLT <= 2 because the flow is westward
+                    vel_tmp = vel_tmp[np.where(vel_tmp <= 30)]
+
+                # NOTE: Remove errors by filtering out very large westward flows
+                if IMF_turning=="southward":
+                    vel_tmp = vel_tmp[np.where(vel_tmp >= -180)]
+                else:
+                    vel_tmp = vel_tmp[np.where(vel_tmp >= -150)]
+
                 if sampling_method == "median":
                     # Do median filter
-                    ys.append(np.median(vel_comp_jj[np.where(vel_reltime_jj == reltm)]))
+                    y_tmp = np.median(vel_tmp)
+                    ys.append(y_tmp)
+                    xs.append(reltm)
                 if sampling_method == "mean":
-                    ys.append(np.mean(vel_comp_jj[np.where(vel_reltime_jj == reltm)]))
+                    y_tmp = np.mean(vel_tmp)
+                    ys.append(y_tmp)
+                    xs.append(reltm)
+                if sampling_method is None:
+                    y_tmp = vel_tmp
+                    ys.extend(y_tmp)
+                    xs.extend([reltm]*len(y_tmp))
 
             # plot the velocities for each MLAT
+            # Do moving average before plotting
             ax.plot(xs, ys, color=color_list[jj],
                     marker=marker_type, ms=marker_size, linewidth=2.0, label=str(mlat))
 
@@ -239,7 +281,7 @@ def vel_vs_reltime(ax, data_dict, veldir="zonal", sampling_method="median",
     ax.set_xlim(reltime_range[0] - 1, reltime_range[1] + 1)
 
     # add legend
-    ax.legend(bbox_to_anchor=(1.02, 0.91), fontsize=8)
+    #ax.legend(bbox_to_anchor=(1.02, 0.91), fontsize=8)
     #ax.legend(loc="upper right", fontsize=8)
     #ax.legend(loc="best", fontsize=8)
 
@@ -252,16 +294,27 @@ def vel_vs_reltime(ax, data_dict, veldir="zonal", sampling_method="median",
 
 if __name__ == "__main__":
 
+    # NOTE: moving average is implemented
+
     # input parameters
     nvel_min=20
-    #lat_range=[54, 59]
-    lat_range=[54, 58]
-    lat_avg = True
     lat_min = 50
-    reltime_resolution=2
-    mlt_width=2.
+    #lat_range=[54, 59]
+    lat_range=[55, 59]
+
+    lat_avg = False   # Do latitudinal average if set to True
+    #NOTE: if lat_avg is True, sampling_method can take "mean" or "median"
+    # If lat_avg is False,  sampling_method can take "mean" or "median" or None
+    #sampling_method="median"
+    sampling_method="mean"
+    #sampling_method=None
+    reltime_range=[-30, 30]
+    del_mlt = 0.4
+    reltime_resolution=7
+    del_reltime = 1
+    mlt_width=1.
     gazmc_span_minlim=30
-    vel_mag_err_maxlim=0.2
+    vel_mag_err_maxlim=0.1
     vel_mag_maxlim=200.
     fit_by_bmazm=False
     fit_by_losvel_azm=True
@@ -269,17 +322,18 @@ if __name__ == "__main__":
     coords = "mlt"
     #weighting = None 
     weighting = "std"
-    sampling_method="median"
     dbdir="../data/sqlite3/"
     #IMF_turning = "northward"
     IMF_turning = "southward"
     add_err_bar = False
 
-    input_table = "master_cosfit_superposed_" + IMF_turning + "_mltwidth_" + str(int(mlt_width)) +\
-                   "_res_" + str(reltime_resolution) + "min"
+    input_table = "master_cosfit_superposed_" + IMF_turning +\
+                  "_mltwidth_" + str(int(mlt_width)) +\
+                  "_res_" + str(reltime_resolution) + "min" +\
+                  "_deltm_" + str(del_reltime) + "min" +\
+                  "_sixrads_quiet_v2"
+                  #"_sixrads_quiet"
 
-    reltime_range=[-26, 26]
-    del_mlt = 0.4
 #    mlt_ranges=[[-3-del_mlt, -3+del_mlt], [-1-del_mlt, -1+del_mlt],
 #                [0-del_mlt,   0+del_mlt], [0-del_mlt,   0+del_mlt],
 #                [1-del_mlt,   1+del_mlt], [3-del_mlt,   3+del_mlt]]
@@ -310,18 +364,7 @@ if __name__ == "__main__":
     veldir_list = [veldir] * len(mlt_ranges)
 
     if veldir == "zonal":
-#        ylim_list = [[-180, 180], [-180, 180], [-100, 100],
-#                     [-100, 100],
-#                     [-100, 100], [-100, 100], [-100, 100]]
-        if lat_avg:
-            ylim_list = [[-160, 20], [-160, 20], [-160, 20],
-                         [-80, 40], [-80, 40], [-80, 40],
-                         [-80, 40], [-80, 40], [-80, 40]]
-        else:
-            ylim_list = [[-180, 180], [-180, 180], [-180, 180],
-                         [-100, 100], [-100, 100], [-100, 100],
-                         [-100, 100], [-100, 100], [-100, 100]]
-
+        ylim_list = [[-160, 50]]  * len(mlt_ranges)
     else:
         #ylim_list = [[-80, 80]]  * len(mlt_ranges)
         ylim_list = [[-40, 40]]  * len(mlt_ranges)
@@ -329,8 +372,10 @@ if __name__ == "__main__":
 
     glatc_list = np.arange(lat_range[1], lat_range[0], -1) - 0.5 
 
-    fig, axes = plt.subplots(nrows=len(mlt_ranges), ncols=1, sharex=True, figsize=(6, 15))
-    fig.subplots_adjust(hspace=0.3)
+    #fig, axes = plt.subplots(nrows=len(mlt_ranges), ncols=1, sharex=True, figsize=(6, 15))
+    fig, axes = plt.subplots(nrows=3, ncols=3, sharex=True, sharey=True, figsize=(15, 6))
+    axes = [x[0] for x in axes.T.reshape((9,1))]
+    fig.subplots_adjust(hspace=0.3, wspace=0.2)
 
 
     for i, mlt_range in enumerate(mlt_ranges): 
@@ -351,8 +396,9 @@ if __name__ == "__main__":
             title = "Velocity Magnitude, MLT = " + str(round(center_mlt))
         else:
             title = veldir[0].upper()+veldir[1:] + " Velocities, MLT = " + str(round(center_mlt))
-        vel_vs_reltime(ax, data_dict, veldir=veldir, sampling_method=sampling_method, lat_avg=lat_avg,
-                       glatc_list=glatc_list, title=title, add_err_bar=add_err_bar)
+        vel_vs_reltime(ax, data_dict, mlt_range=mlt_range, IMF_turning=IMF_turning,
+                       veldir=veldir, sampling_method=sampling_method,
+                       lat_avg=lat_avg, glatc_list=glatc_list, title=title, add_err_bar=add_err_bar)
         ax.yaxis.set_major_locator(MultipleLocator(base=40))
 
         if veldir == "all":
@@ -365,7 +411,8 @@ if __name__ == "__main__":
     axes[-1].xaxis.set_major_locator(MultipleLocator(base=5))
 
     # save the fig
-    fig_dir = "/home/muhammad/Dropbox/tmp/velcomp_vs_reltime/"
+    #fig_dir = "/home/muhammad/Dropbox/tmp/velcomp_vs_reltime/"
+    fig_dir = "../plots/velcomp_vs_reltime/sixrads_quiet/"
     #fig_name = "line_plot"
     if lat_avg:
         tmp_txt = "_lat_avg"
@@ -375,7 +422,9 @@ if __name__ == "__main__":
                "_to_lat" + str(lat_range[1]) +\
                "_mltwidth_" + str(int(mlt_width)) +\
                "_res_" + str(reltime_resolution) + "min" + \
-               "_nvel_min_" + str(nvel_min) + "velmag_err_"  + str(vel_mag_err_maxlim)
+               "_deltm_" + str(del_reltime) + "min" +\
+               "_nvel_min_" + str(nvel_min) +\
+               "_velmag_err_"  + str(vel_mag_err_maxlim) + "_v2"
 
     fig.savefig(fig_dir + fig_name + ".png", dpi=300, bbox_inches="tight")
     plt.close(fig)
